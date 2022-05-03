@@ -6,18 +6,18 @@ import {
   MutationFunction,
   useQueryClient,
 } from "react-query";
-import { Zodios } from "../zodios";
+import { Zodios } from "@zodios/core";
 import {
-  ZodiosEnpointDescriptions,
   AnyZodiosMethodOptions,
-  Paths,
-  ZodiosMethodOptions,
-  Method,
-  ZodiosRequestOptions,
-  Response,
   Body,
-} from "../zodios.types";
-import { pick } from "../utils";
+  Method,
+  Paths,
+  Response,
+  ZodiosEnpointDescriptions,
+  ZodiosMethodOptions,
+  ZodiosRequestOptions,
+} from "@zodios/core";
+import { pick } from "./utils";
 
 export class ZodiosHooks<Api extends ZodiosEnpointDescriptions> {
   constructor(

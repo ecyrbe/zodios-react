@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "react-query";
-import { Zodios } from "../src/index";
+import { Zodios } from "@zodios/core";
 import { ZodiosHooks } from "../src/react";
 import { z } from "zod";
 

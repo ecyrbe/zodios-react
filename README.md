@@ -1,137 +1,40 @@
- <h1 align="center">Zodios</h1>
+ <h1 align="center">Zodios React</h1>
  <p align="center">
-   <a href="https://github.com/ecyrbe/zodios">
-     <img align="center" src="https://raw.githubusercontent.com/ecyrbe/zodios/main/docs/logo.svg" width="128px" alt="Zodios logo">
+   <a href="https://github.com/ecyrbe/zodios-react">
+     <img align="center" src="https://raw.githubusercontent.com/ecyrbe/zodios-react/main/docs/logo.svg" width="128px" alt="Zodios logo">
    </a>
  </p>
  
  <p align="center">
-    Zodios is a typescript api client with auto-completion features backed by <a src="https://axios-http.com" >axios</a> and <a src="https://github.com/colinhacks/zod">zod</a>
+    React hooks for zodios backed by <a src="https://react-query.tanstack.com/" >react-query</a>
  </p>
  
  <p align="center">
-   <img src="https://img.shields.io/npm/v/zodios.svg" alt="langue typescript">
-   <img alt="npm" src="https://img.shields.io/npm/dw/zodios">
-   <a href="https://github.com/ecyrbe/zodios/blob/main/LICENSE">
-    <img alt="GitHub" src="https://img.shields.io/github/license/ecyrbe/zodios">   
+   <a href="https://www.npmjs.com/package/@zodios/react">
+   <img src="https://img.shields.io/npm/v/@zodios/react.svg" alt="langue typescript">
    </a>
-   <img alt="GitHub Workflow Status" src="https://img.shields.io/github/workflow/status/ecyrbe/zodios/CI">
+   <a href="https://www.npmjs.com/package/@zodios/react">
+   <img alt="npm" src="https://img.shields.io/npm/dw/@zodios/react">
+   </a>
+   <a href="https://github.com/ecyrbe/zodios-react/blob/main/LICENSE">
+    <img alt="GitHub" src="https://img.shields.io/github/license/ecyrbe/zodios-react">   
+   </a>
+   <img alt="GitHub Workflow Status" src="https://img.shields.io/github/workflow/status/ecyrbe/zodios-react/CI">
  </p>
-
-# What is it ?
-
-It's an axios compatible API client, with the following features:  
-  
-- really simple centralized API declaration
-- typescript autocompletion in your favorite IDE for URL and parameters
-- typescript response types
-- parameters and responses schema thanks to zod
-- response schema validation
-- bearer token injection and token renewal with simple token provider interface
-- all axios features available
 
 # Install
 
 ```bash
-> npm install zodios
+> npm install @zodios/react
 ```
 
 or
 
 ```bash
-> yarn add zodios
+> yarn add @zodios/react
 ```
 
 # Usage
-
-For an almost complete example on how to use zodios and how to split your APIs declarations, take a look at [dev.to](examples/dev.to/) example.
-
-## Declare your API with zodios
-
-Here is an example of API declaration with Zodios.
-  
-```typescript
-import { Zodios } from "zodios";
-import { z } from "zod";
-
-const apiClient = new Zodios(
-  "https://jsonplaceholder.typicode.com",
-  // API definition
-  [
-    {
-      method: "get",
-      path: "/users/:id", // auto detect :id and ask for it in apiClient get params
-      description: "Get a user",
-      response: z.object({
-        id: z.number(),
-        name: z.string(),
-      }),
-    },
-  ] as const,
-);
-```
-Calling this API is now easy and has builtin autocomplete features :  
-  
-```typescript
-//   typed                     auto-complete path   auto-complete params
-//     ▼                               ▼                   ▼
-const user = await apiClient.get("/users/:id", { params: { id: 7 } });
-console.log(user);
-```
-  
-It should output  
-  
-```js
-{ id: 7, name: 'Kurtis Weissnat' }
-```
-  
-## Use token provider plugin
-  
-Zodios comes with a plugin to inject and renew your tokens :
-```typescript
-  import { pluginToken } from 'zodios/plugins/token';
-
-  apiClient.use(pluginToken({
-    getToken: async () => "token"
-  }));
-```
-
-## Get underlying axios instance
-
-you can get back the underlying axios instance to customize it.
-
-```typescript
-const axiosInstance = apiClient.axios;
-```
-## Give your own axios instance to zodios
-
-you can instanciate zodios with your own axios intance.
-
-```typescript
-const apiClient = new Zodios(
-  "https://jsonplaceholder.typicode.com",
-  [ ... ] as const,
-  // Optional Axios instance
-  {
-    axiosIntance: customAxiosInstance
-  }
-);
-```
-
-## Disable zodios response validation
-
-```typescript
-const apiClient = new Zodios(
-  "https://jsonplaceholder.typicode.com",
-  [ ... ] as const,
-  // Disable validation
-  {
-    validateResponse: false
-  }
-);
-```
-
-## React helpers
 
 Zodios comes with a Query and Mutation hook helper.  
 It's a thin wrapper around React-Query but with zodios auto completion.
@@ -140,8 +43,8 @@ Zodios query hook also returns an invalidation helper to allow you to reset reac
   
 ```typescript
 import { QueryClient, QueryClientProvider } from 'react-query';
-import { Zodios } from "zodios";
-import { ZodiosHooks } from "zodios/react";
+import { Zodios } from "@zodios/core";
+import { ZodiosHooks } from "@zodios/react";
 import { z } from "zod";
 
 const userSchema = z
