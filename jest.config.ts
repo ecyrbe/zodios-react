@@ -3,7 +3,7 @@ import type { Config } from "@jest/types";
 // Objet synchrone
 const config: Config.InitialOptions = {
   verbose: true,
-  moduleFileExtensions: ["ts", "js", "json", "node"],
+  moduleFileExtensions: ["ts", "js", "tsx", "jsx", "json", "node"],
   rootDir: "./",
   testRegex: ".(spec|test).tsx?$",
   transform: {
@@ -18,6 +18,6 @@ const config: Config.InitialOptions = {
       statements: 85,
     },
   },
-  testEnvironment: "node",
+  testEnvironment: "jsdom",
 };
 export default config;

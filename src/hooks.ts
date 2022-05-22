@@ -6,7 +6,7 @@ import {
   MutationFunction,
   useQueryClient,
 } from "react-query";
-import { Zodios } from "@zodios/core";
+import { ZodiosInstance } from "@zodios/core";
 import {
   AnyZodiosMethodOptions,
   Body,
@@ -19,10 +19,31 @@ import {
 } from "@zodios/core";
 import { pick } from "./utils";
 
+export type IfEquals<T, U, Y = unknown, N = never> = (<G>() => G extends T
+  ? 1
+  : 2) extends <G>() => G extends U ? 1 : 2
+  ? Y
+  : N;
+
+type UndefinedIfNever<T> = IfEquals<T, never, undefined, T>;
+
+type MutationOptions<
+  Api extends ZodiosEnpointDescriptions,
+  M extends Method,
+  Path extends Paths<Api, M>
+> = Omit<
+  UseMutationOptions<
+    Awaited<Response<Api, M, Path>>,
+    unknown,
+    UndefinedIfNever<Body<Api, M, Path>>
+  >,
+  "mutationFn"
+>;
+
 export class ZodiosHooks<Api extends ZodiosEnpointDescriptions> {
   constructor(
     private readonly apiName: string,
-    private readonly zodios: Zodios<Api>
+    private readonly zodios: ZodiosInstance<Api>
   ) {}
 
   useQuery<Path extends Paths<Api, "get">>(
@@ -53,33 +74,23 @@ export class ZodiosHooks<Api extends ZodiosEnpointDescriptions> {
   useMutation<M extends Method, Path extends Paths<Api, M>>(
     method: M,
     path: Path,
-    mutationOptions?: UseMutationOptions
+    config?: ZodiosMethodOptions<Api, M, Path>,
+    mutationOptions?: MutationOptions<Api, M, Path>
   ) {
-    type MutationVariables = {
-      data: Body<Api, M, Path>;
-      config?: ZodiosMethodOptions<Api, M, Path>;
-    };
+    type MutationVariables = UndefinedIfNever<Body<Api, M, Path>>;
 
     const mutation: MutationFunction<
       Response<Api, M, Path>,
       MutationVariables
-    > = ({ data, config }: MutationVariables) => {
+    > = (variables: MutationVariables) => {
       return this.zodios.request({
         ...config,
         method,
         url: path,
-        data,
-      } as unknown as ZodiosRequestOptions<Api, "post", Path>);
+        data: variables,
+      } as unknown as ZodiosRequestOptions<Api, M, Path>);
     };
-    type MutationOptions = Omit<
-      UseMutationOptions<
-        Awaited<Response<Api, M, Path>>,
-        unknown,
-        MutationVariables
-      >,
-      "mutationFn"
-    >;
-    return useMutation(mutation, mutationOptions as MutationOptions);
+    return useMutation(mutation, mutationOptions);
   }
 
   useGet<Path extends Paths<Api, "get">>(
@@ -92,29 +103,33 @@ export class ZodiosHooks<Api extends ZodiosEnpointDescriptions> {
 
   usePost<Path extends Paths<Api, "post">>(
     path: Path,
-    mutationOptions?: UseMutationOptions
+    config?: ZodiosMethodOptions<Api, "post", Path>,
+    mutationOptions?: MutationOptions<Api, "post", Path>
   ) {
-    return this.useMutation("post", path, mutationOptions);
+    return this.useMutation("post", path, config, mutationOptions);
   }
 
   usePut<Path extends Paths<Api, "put">>(
     path: Path,
-    mutationOptions?: UseMutationOptions
+    config?: ZodiosMethodOptions<Api, "put", Path>,
+    mutationOptions?: MutationOptions<Api, "put", Path>
   ) {
-    return this.useMutation("put", path, mutationOptions);
+    return this.useMutation("put", path, config, mutationOptions);
   }
 
   usePatch<Path extends Paths<Api, "patch">>(
     path: Path,
-    mutationOptions?: UseMutationOptions
+    config?: ZodiosMethodOptions<Api, "patch", Path>,
+    mutationOptions?: MutationOptions<Api, "patch", Path>
   ) {
-    return this.useMutation("patch", path, mutationOptions);
+    return this.useMutation("patch", path, config, mutationOptions);
   }
 
   useDelete<Path extends Paths<Api, "delete">>(
     path: Path,
-    mutationOptions?: UseMutationOptions
+    config?: ZodiosMethodOptions<Api, "delete", Path>,
+    mutationOptions?: MutationOptions<Api, "delete", Path>
   ) {
-    return this.useMutation("delete", path, mutationOptions);
+    return this.useMutation("delete", path, config, mutationOptions);
   }
 }

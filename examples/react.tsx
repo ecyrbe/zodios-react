@@ -1,6 +1,7 @@
+import React from "react";
 import { QueryClient, QueryClientProvider } from "react-query";
 import { Zodios } from "@zodios/core";
-import { ZodiosHooks } from "../src/react";
+import { ZodiosHooks } from "../src";
 import { z } from "zod";
 
 // you can define schema before declaring the API to get back the type
@@ -68,14 +69,14 @@ const Users = () => {
     error,
     invalidate: invalidateUsers, // zodios also provides invalidation helpers
   } = zodiosHooks.useQuery("/users");
-  const { mutate } = zodiosHooks.useMutation("post", "/users", {
+  const { mutate } = zodiosHooks.useMutation("post", "/users", undefined, {
     onSuccess: () => invalidateUsers(),
   });
 
   return (
-    <div>
+    <>
       <h1>Users</h1>
-      <button onClick={() => mutate({ data: { id: 10, name: "john doe" } })}>
+      <button onClick={() => mutate({ id: 10, name: "john doe" })}>
         add user
       </button>
       {isLoading && <div>Loading...</div>}
@@ -87,7 +88,7 @@ const Users = () => {
           ))}
         </ul>
       )}
-    </div>
+    </>
   );
 };
 
