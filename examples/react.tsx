@@ -12,6 +12,12 @@ const userSchema = z
   })
   .required();
 
+const createUserSchema = z
+  .object({
+    name: z.string(),
+  })
+  .required();
+
 const usersSchema = z.array(userSchema);
 
 // you can then get back the types
@@ -51,7 +57,7 @@ const api = [
       {
         name: "body",
         type: "Body",
-        schema: userSchema,
+        schema: createUserSchema,
       },
     ],
     response: userSchema,
@@ -76,9 +82,7 @@ const Users = () => {
   return (
     <>
       <h1>Users</h1>
-      <button onClick={() => mutate({ id: 10, name: "john doe" })}>
-        add user
-      </button>
+      <button onClick={() => mutate({ name: "john doe" })}>add user</button>
       {isLoading && <div>Loading...</div>}
       {error && <div>Error: {(error as Error).message}</div>}
       {users && (
