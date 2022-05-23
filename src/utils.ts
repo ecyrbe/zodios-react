@@ -33,3 +33,12 @@ export function pick<T, K extends keyof T>(
   }
   return ret;
 }
+
+/**
+ * set first letter of a string to uppercase
+ * @param str - the string to capitalize
+ * @returns - the string with the first letter uppercased
+ */
+export function capitalize(str: string) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}

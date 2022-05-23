@@ -1,4 +1,4 @@
-import { omit, pick } from "./utils";
+import { capitalize, omit, pick } from "./utils";
 
 describe("omit", () => {
   it("should be defined", () => {
@@ -64,5 +64,19 @@ describe("pick", () => {
     };
 
     expect(pick(obj, ["a", "b", "c"])).toEqual(obj);
+  });
+});
+
+describe("capitalize", () => {
+  it("should be defined", () => {
+    expect(capitalize).toBeDefined();
+  });
+
+  it("should capitalize the first letter of the string", () => {
+    expect(capitalize("anyway")).toEqual("Anyway");
+  });
+
+  it("should capitalize the first letter of an utf8 string", () => {
+    expect(capitalize("émmanuelle")).toEqual("Émmanuelle");
   });
 });

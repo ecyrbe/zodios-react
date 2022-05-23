@@ -1,7 +1,7 @@
 import React from "react";
 import { renderHook } from "@testing-library/react-hooks";
 import { Zodios, ApiOf, ZodiosInstance } from "@zodios/core";
-import { ZodiosHooks } from "./hooks";
+import { ZodiosHooks, ZodiosHooksInstance } from "./hooks";
 import express from "express";
 import { AddressInfo } from "net";
 import z from "zod";
@@ -12,6 +12,7 @@ const api = [
   {
     method: "get",
     path: "/:id",
+    alias: "getUser",
     response: z.object({
       id: z.number(),
       name: z.string(),
@@ -20,6 +21,7 @@ const api = [
   {
     method: "get",
     path: "/:id/address/:address",
+    alias: "getUserAddress",
     response: z.object({
       id: z.number(),
       address: z.string(),
@@ -28,6 +30,7 @@ const api = [
   {
     method: "post",
     path: "/",
+    alias: "createUser",
     parameters: [
       {
         name: "body",
@@ -45,6 +48,7 @@ const api = [
   {
     method: "put",
     path: "/",
+    alias: "updateUser",
     parameters: [
       {
         name: "body",
@@ -63,6 +67,7 @@ const api = [
   {
     method: "patch",
     path: "/",
+    alias: "patchUser",
     parameters: [
       {
         name: "body",
@@ -81,6 +86,7 @@ const api = [
   {
     method: "delete",
     path: "/:id",
+    alias: "deleteUser",
     response: z.object({
       id: z.number(),
     }),
@@ -103,7 +109,7 @@ describe("zodios hooks", () => {
   let server: ReturnType<typeof app.listen>;
   let port: number;
   let apiClient: ZodiosInstance<typeof api>;
-  let apiHooks: ZodiosHooks<typeof api>;
+  let apiHooks: ZodiosHooksInstance<typeof api>;
 
   beforeAll(async () => {
     app = express();
@@ -148,6 +154,18 @@ describe("zodios hooks", () => {
   it("should get id", async () => {
     const { result, waitFor } = renderHook(
       () => apiHooks.useGet("/:id", { params: { id: 1 } }),
+      { wrapper }
+    );
+    await waitFor(() => result.current.isSuccess);
+    expect(result.current.data).toEqual({
+      id: 1,
+      name: "test",
+    });
+  });
+
+  it("should get id with alias", async () => {
+    const { result, waitFor } = renderHook(
+      () => apiHooks.useGetUser({ params: { id: 1 } }),
       { wrapper }
     );
     await waitFor(() => result.current.isSuccess);
@@ -243,6 +261,29 @@ describe("zodios hooks", () => {
         }>();
         const apiMutations = apiHooks.useDelete(
           "/:id",
+          { params: { id: 3 } },
+          {
+            onSuccess: (data) => {
+              setUserDeleted(data);
+            },
+          }
+        );
+        return { apiMutations, userDeleted };
+      },
+      { wrapper }
+    );
+    result.current.apiMutations.mutate(undefined);
+    await waitFor(() => result.current.apiMutations.isSuccess);
+    expect(result.current.userDeleted).toEqual({ id: 3 });
+  });
+
+  it("should delete user with alias", async () => {
+    const { result, waitFor } = renderHook(
+      () => {
+        const [userDeleted, setUserDeleted] = React.useState<{
+          id: number;
+        }>();
+        const apiMutations = apiHooks.useDeleteUser(
           { params: { id: 3 } },
           {
             onSuccess: (data) => {

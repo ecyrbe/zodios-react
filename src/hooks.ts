@@ -5,6 +5,8 @@ import {
   UseMutationOptions,
   MutationFunction,
   useQueryClient,
+  UseMutationResult,
+  UseQueryResult,
 } from "react-query";
 import { ZodiosInstance } from "@zodios/core";
 import {
@@ -17,18 +19,21 @@ import {
   ZodiosMethodOptions,
   ZodiosRequestOptions,
 } from "@zodios/core";
-import { pick } from "./utils";
-
-export type IfEquals<T, U, Y = unknown, N = never> = (<G>() => G extends T
-  ? 1
-  : 2) extends <G>() => G extends U ? 1 : 2
-  ? Y
-  : N;
+import { capitalize, pick } from "./utils";
+import {
+  AliasEndpointApiDescription,
+  Aliases,
+  BodyByAlias,
+  MutationMethod,
+  ResponseByAlias,
+  ZodiosConfigByAlias,
+} from "@zodios/core/lib/zodios.types";
+import { IfEquals, MergeUnion } from "@zodios/core/lib/utils.types";
 
 type UndefinedIfNever<T> = IfEquals<T, never, undefined, T>;
 
 type MutationOptions<
-  Api extends ZodiosEnpointDescriptions,
+  Api extends readonly unknown[],
   M extends Method,
   Path extends Paths<Api, M>
 > = Omit<
@@ -40,11 +45,49 @@ type MutationOptions<
   "mutationFn"
 >;
 
-export class ZodiosHooks<Api extends ZodiosEnpointDescriptions> {
+type MutationOptionsByAlias<
+  Api extends readonly unknown[],
+  Alias extends string
+> = Omit<
+  UseMutationOptions<
+    Awaited<ResponseByAlias<Api, Alias>>,
+    unknown,
+    UndefinedIfNever<BodyByAlias<Api, Alias>>
+  >,
+  "mutationFn"
+>;
+
+export class ZodiosHooksClass<Api extends ZodiosEnpointDescriptions> {
   constructor(
     private readonly apiName: string,
     private readonly zodios: ZodiosInstance<Api>
-  ) {}
+  ) {
+    this.injectAliasEndpoints();
+  }
+
+  private injectAliasEndpoints() {
+    this.zodios.api.forEach((endpoint) => {
+      if (endpoint.alias) {
+        if (["post", "put", "patch", "delete"].includes(endpoint.method)) {
+          (this as any)[`use${capitalize(endpoint.alias)}`] = (
+            config: any,
+            mutationOptions: any
+          ) =>
+            this.useMutation(
+              endpoint.method,
+              endpoint.path as any,
+              config,
+              mutationOptions
+            );
+        } else {
+          (this as any)[`use${capitalize(endpoint.alias)}`] = (
+            config: any,
+            queryOptions: any
+          ) => this.useQuery(endpoint.path as any, config, queryOptions);
+        }
+      }
+    });
+  }
 
   useQuery<Path extends Paths<Api, "get">>(
     path: Path,
@@ -133,3 +176,55 @@ export class ZodiosHooks<Api extends ZodiosEnpointDescriptions> {
     return this.useMutation("delete", path, config, mutationOptions);
   }
 }
+
+export type ZodiosHooksAliases<Api extends readonly unknown[]> = MergeUnion<
+  Aliases<Api> extends infer Aliases
+    ? Aliases extends string
+      ? {
+          [Alias in `use${Capitalize<Aliases>}`]: Alias extends `use${infer AliasName}`
+            ? AliasEndpointApiDescription<
+                Api,
+                Uncapitalize<AliasName>
+              >[number]["method"] extends MutationMethod
+              ? (
+                  configOptions?: ZodiosConfigByAlias<
+                    Api,
+                    Uncapitalize<AliasName>
+                  >,
+                  mutationOptions?: MutationOptionsByAlias<
+                    Api,
+                    Uncapitalize<AliasName>
+                  >
+                ) => UseMutationResult<
+                  ResponseByAlias<Api, Uncapitalize<AliasName>>,
+                  unknown,
+                  UndefinedIfNever<BodyByAlias<Api, Alias>>,
+                  unknown
+                >
+              : (
+                  configOptions?: ZodiosConfigByAlias<
+                    Api,
+                    Uncapitalize<AliasName>
+                  >,
+                  queryOptions?: Omit<UseQueryOptions, "queryKey" | "queryFn">
+                ) => UseQueryResult<
+                  ResponseByAlias<Api, Uncapitalize<AliasName>>,
+                  unknown
+                >
+            : never;
+        }
+      : never
+    : never
+>;
+
+export type ZodiosHooksInstance<Api extends ZodiosEnpointDescriptions> =
+  ZodiosHooksClass<Api> & ZodiosHooksAliases<Api>;
+
+export type ZodiosHooksConstructor = {
+  new <Api extends ZodiosEnpointDescriptions>(
+    name: string,
+    zodios: ZodiosInstance<Api>
+  ): ZodiosHooksInstance<Api>;
+};
+
+export const ZodiosHooks = ZodiosHooksClass as ZodiosHooksConstructor;
