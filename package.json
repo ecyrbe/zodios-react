@@ -1,7 +1,7 @@
 {
   "name": "@zodios/react",
   "description": "React hooks for zodios",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -62,7 +62,7 @@
     "typescript": "4.7.3",
     "zod": "3.17.3"
   },
-  "resolutions":{
+  "resolutions": {
     "@types/react": "18.0.12"
   },
   "dependencies": {}
