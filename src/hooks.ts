@@ -9,7 +9,7 @@ import {
   UseQueryResult,
 } from "react-query";
 import { ZodiosInstance } from "@zodios/core";
-import {
+import type {
   AnyZodiosMethodOptions,
   Body,
   Method,
@@ -20,7 +20,7 @@ import {
   ZodiosRequestOptions,
 } from "@zodios/core";
 import { capitalize, pick } from "./utils";
-import {
+import type {
   AliasEndpointApiDescription,
   Aliases,
   BodyByAlias,
@@ -28,7 +28,7 @@ import {
   ResponseByAlias,
   ZodiosConfigByAlias,
 } from "@zodios/core/lib/zodios.types";
-import { IfEquals, MergeUnion } from "@zodios/core/lib/utils.types";
+import type { IfEquals, MergeUnion } from "@zodios/core/lib/utils.types";
 
 type UndefinedIfNever<T> = IfEquals<T, never, undefined, T>;
 
