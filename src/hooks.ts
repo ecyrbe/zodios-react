@@ -33,7 +33,7 @@ import { IfEquals, MergeUnion } from "@zodios/core/lib/utils.types";
 type UndefinedIfNever<T> = IfEquals<T, never, undefined, T>;
 
 type MutationOptions<
-  Api extends readonly unknown[],
+  Api extends unknown[],
   M extends Method,
   Path extends Paths<Api, M>
 > = Omit<
@@ -45,10 +45,7 @@ type MutationOptions<
   "mutationFn"
 >;
 
-type MutationOptionsByAlias<
-  Api extends readonly unknown[],
-  Alias extends string
-> = Omit<
+type MutationOptionsByAlias<Api extends unknown[], Alias extends string> = Omit<
   UseMutationOptions<
     Awaited<ResponseByAlias<Api, Alias>>,
     unknown,
@@ -177,7 +174,7 @@ export class ZodiosHooksClass<Api extends ZodiosEnpointDescriptions> {
   }
 }
 
-export type ZodiosHooksAliases<Api extends readonly unknown[]> = MergeUnion<
+export type ZodiosHooksAliases<Api extends unknown[]> = MergeUnion<
   Aliases<Api> extends infer Aliases
     ? Aliases extends string
       ? {

@@ -1,6 +1,6 @@
 import React from "react";
 import { renderHook } from "@testing-library/react-hooks";
-import { Zodios, ApiOf, ZodiosInstance } from "@zodios/core";
+import { Zodios, ZodiosInstance, asApi } from "@zodios/core";
 import { ZodiosHooks, ZodiosHooksInstance } from "./hooks";
 import express from "express";
 import { AddressInfo } from "net";
@@ -8,7 +8,7 @@ import z from "zod";
 import cors from "cors";
 import { QueryClient, QueryClientProvider } from "react-query";
 
-const api = [
+const api = asApi([
   {
     method: "get",
     path: "/:id",
@@ -91,7 +91,7 @@ const api = [
       id: z.number(),
     }),
   },
-] as const;
+]);
 
 const queryClient = new QueryClient({
   defaultOptions: {
