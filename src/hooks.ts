@@ -28,7 +28,11 @@ import type {
   ResponseByAlias,
   ZodiosConfigByAlias,
 } from "@zodios/core/lib/zodios.types";
-import type { IfEquals, MergeUnion } from "@zodios/core/lib/utils.types";
+import type {
+  IfEquals,
+  MergeUnion,
+  ReadonlyDeep,
+} from "@zodios/core/lib/utils.types";
 
 type UndefinedIfNever<T> = IfEquals<T, never, undefined, T>;
 
@@ -86,9 +90,12 @@ export class ZodiosHooksClass<Api extends ZodiosEnpointDescriptions> {
     });
   }
 
-  useQuery<Path extends Paths<Api, "get">>(
+  useQuery<
+    Path extends Paths<Api, "get">,
+    TConfig extends ReadonlyDeep<ZodiosMethodOptions<Api, "get", Path>>
+  >(
     path: Path,
-    config?: ZodiosMethodOptions<Api, "get", Path>,
+    config?: TConfig,
     queryOptions?: Omit<UseQueryOptions, "queryKey" | "queryFn">
   ) {
     const params = pick(config as AnyZodiosMethodOptions | undefined, [
@@ -111,10 +118,14 @@ export class ZodiosHooksClass<Api extends ZodiosEnpointDescriptions> {
     };
   }
 
-  useMutation<M extends Method, Path extends Paths<Api, M>>(
+  useMutation<
+    M extends Method,
+    Path extends Paths<Api, M>,
+    TConfig extends ReadonlyDeep<ZodiosMethodOptions<Api, M, Path>>
+  >(
     method: M,
     path: Path,
-    config?: ZodiosMethodOptions<Api, M, Path>,
+    config?: TConfig,
     mutationOptions?: MutationOptions<Api, M, Path>
   ) {
     type MutationVariables = UndefinedIfNever<Body<Api, M, Path>>;
@@ -133,41 +144,56 @@ export class ZodiosHooksClass<Api extends ZodiosEnpointDescriptions> {
     return useMutation(mutation, mutationOptions);
   }
 
-  useGet<Path extends Paths<Api, "get">>(
+  useGet<
+    Path extends Paths<Api, "get">,
+    TConfig extends ReadonlyDeep<ZodiosMethodOptions<Api, "get", Path>>
+  >(
     path: Path,
-    config?: ZodiosMethodOptions<Api, "get", Path>,
+    config?: TConfig,
     queryOptions?: Omit<UseQueryOptions, "queryKey" | "queryFn">
   ) {
     return this.useQuery(path, config, queryOptions);
   }
 
-  usePost<Path extends Paths<Api, "post">>(
+  usePost<
+    Path extends Paths<Api, "post">,
+    TConfig extends ReadonlyDeep<ZodiosMethodOptions<Api, "post", Path>>
+  >(
     path: Path,
-    config?: ZodiosMethodOptions<Api, "post", Path>,
+    config?: TConfig,
     mutationOptions?: MutationOptions<Api, "post", Path>
   ) {
     return this.useMutation("post", path, config, mutationOptions);
   }
 
-  usePut<Path extends Paths<Api, "put">>(
+  usePut<
+    Path extends Paths<Api, "put">,
+    TConfig extends ReadonlyDeep<ZodiosMethodOptions<Api, "put", Path>>
+  >(
     path: Path,
-    config?: ZodiosMethodOptions<Api, "put", Path>,
+    config?: TConfig,
     mutationOptions?: MutationOptions<Api, "put", Path>
   ) {
     return this.useMutation("put", path, config, mutationOptions);
   }
 
-  usePatch<Path extends Paths<Api, "patch">>(
+  usePatch<
+    Path extends Paths<Api, "patch">,
+    TConfig extends ReadonlyDeep<ZodiosMethodOptions<Api, "patch", Path>>
+  >(
     path: Path,
-    config?: ZodiosMethodOptions<Api, "patch", Path>,
+    config?: TConfig,
     mutationOptions?: MutationOptions<Api, "patch", Path>
   ) {
     return this.useMutation("patch", path, config, mutationOptions);
   }
 
-  useDelete<Path extends Paths<Api, "delete">>(
+  useDelete<
+    Path extends Paths<Api, "delete">,
+    TConfig extends ReadonlyDeep<ZodiosMethodOptions<Api, "delete", Path>>
+  >(
     path: Path,
-    config?: ZodiosMethodOptions<Api, "delete", Path>,
+    config?: TConfig,
     mutationOptions?: MutationOptions<Api, "delete", Path>
   ) {
     return this.useMutation("delete", path, config, mutationOptions);
