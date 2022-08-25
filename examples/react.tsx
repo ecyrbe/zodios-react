@@ -1,6 +1,6 @@
 import React from "react";
 import { QueryClient, QueryClientProvider } from "react-query";
-import { Zodios } from "@zodios/core";
+import { asApi, Zodios } from "@zodios/core";
 import { ZodiosHooks } from "../src";
 import { z } from "zod";
 
@@ -24,10 +24,11 @@ const usersSchema = z.array(userSchema);
 type User = z.infer<typeof userSchema>;
 type Users = z.infer<typeof usersSchema>;
 
-const api = [
+const api = asApi([
   {
     method: "get",
     path: "/users",
+    alias: "getUsers",
     description: "Get all users",
     parameters: [
       {
@@ -62,7 +63,7 @@ const api = [
     ],
     response: userSchema,
   },
-] as const;
+]);
 const baseUrl = "https://jsonplaceholder.typicode.com";
 
 const zodios = new Zodios(baseUrl, api);
@@ -74,7 +75,7 @@ const Users = () => {
     isLoading,
     error,
     invalidate: invalidateUsers, // zodios also provides invalidation helpers
-  } = zodiosHooks.useQuery("/users");
+  } = zodiosHooks.useGetUsers();
   const { mutate } = zodiosHooks.useMutation("post", "/users", undefined, {
     onSuccess: () => invalidateUsers(),
   });

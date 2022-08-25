@@ -44,7 +44,7 @@ Zodios query hook also returns an invalidation helper to allow you to reset reac
 ```typescript
 import React from "react";
 import { QueryClient, QueryClientProvider } from "react-query";
-import { Zodios } from "@zodios/core";
+import { Zodios, asApi } from "@zodios/core";
 import { ZodiosHooks } from "@zodios/react";
 import { z } from "zod";
 
@@ -68,7 +68,7 @@ const usersSchema = z.array(userSchema);
 type User = z.infer<typeof userSchema>;
 type Users = z.infer<typeof usersSchema>;
 
-const api = [
+const api = asApi([
   {
     method: "get",
     path: "/users",
@@ -106,7 +106,7 @@ const api = [
     ],
     response: userSchema,
   },
-] as const;
+]);
 const baseUrl = "https://jsonplaceholder.typicode.com";
 
 const zodios = new Zodios(baseUrl, api);

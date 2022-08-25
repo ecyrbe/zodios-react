@@ -161,6 +161,7 @@ describe("zodios hooks", () => {
       id: 1,
       name: "test",
     });
+    expect(result.current.invalidate).toBeDefined();
   });
 
   it("should get id with alias", async () => {
@@ -173,6 +174,7 @@ describe("zodios hooks", () => {
       id: 1,
       name: "test",
     });
+    expect(result.current.invalidate).toBeDefined();
   });
 
   it("should get id and address", async () => {

@@ -233,7 +233,7 @@ export type ZodiosHooksAliases<Api extends unknown[]> = MergeUnion<
                 ) => UseQueryResult<
                   ResponseByAlias<Api, Uncapitalize<AliasName>>,
                   unknown
-                >
+                > & { invalidate: () => Promise<void> }
             : never;
         }
       : never
