@@ -221,7 +221,7 @@ export type ZodiosHooksAliases<Api extends unknown[]> = MergeUnion<
                 ) => UseMutationResult<
                   ResponseByAlias<Api, Uncapitalize<AliasName>>,
                   unknown,
-                  UndefinedIfNever<BodyByAlias<Api, Alias>>,
+                  UndefinedIfNever<BodyByAlias<Api, Uncapitalize<AliasName>>>,
                   unknown
                 >
               : (

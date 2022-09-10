@@ -53,6 +53,7 @@ const api = asApi([
   {
     method: "post",
     path: "/users",
+    alias: "createUser",
     description: "Create a user",
     parameters: [
       {
@@ -76,7 +77,7 @@ const Users = () => {
     error,
     invalidate: invalidateUsers, // zodios also provides invalidation helpers
   } = zodiosHooks.useGetUsers();
-  const { mutate } = zodiosHooks.useMutation("post", "/users", undefined, {
+  const { mutate } = zodiosHooks.useCreateUser(undefined, {
     onSuccess: () => invalidateUsers(),
   });
 
