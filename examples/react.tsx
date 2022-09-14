@@ -1,8 +1,10 @@
-import React from "react";
+import React, { useRef, useState } from "react";
 import { QueryClient, QueryClientProvider } from "react-query";
-import { asApi, Zodios } from "@zodios/core";
+import { ApiOf, asApi, Zodios } from "@zodios/core";
 import { ZodiosHooks } from "../src";
 import { z } from "zod";
+import { PathParams, QueryParams } from "@zodios/core/lib/zodios.types";
+import { PathParamNames } from "@zodios/core/lib/utils.types";
 
 // you can define schema before declaring the API to get back the type
 const userSchema = z
@@ -32,14 +34,14 @@ const api = asApi([
     description: "Get all users",
     parameters: [
       {
-        name: "q",
-        type: "Query",
-        schema: z.string(),
-      },
-      {
         name: "page",
         type: "Query",
-        schema: z.string().optional(),
+        schema: z.number().positive().optional(),
+      },
+      {
+        name: "limit",
+        type: "Query",
+        schema: z.number().positive().optional(),
       },
     ],
     response: usersSchema,
@@ -71,12 +73,29 @@ const zodios = new Zodios(baseUrl, api);
 const zodiosHooks = new ZodiosHooks("jsonplaceholder", zodios);
 
 const Users = () => {
+  const page = useRef(0);
   const {
     data: users,
     isLoading,
     error,
+    fetchNextPage,
     invalidate: invalidateUsers, // zodios also provides invalidation helpers
-  } = zodiosHooks.useGetUsers();
+  } = zodiosHooks.useInfiniteQuery(
+    "/users",
+    { queries: { limit: 10 } },
+    {
+      getPageParamList: () => {
+        return ["page"];
+      },
+      getNextPageParam: () => {
+        return {
+          queries: {
+            page: page.current + 1,
+          },
+        };
+      },
+    }
+  );
   const { mutate } = zodiosHooks.useCreateUser(undefined, {
     onSuccess: () => invalidateUsers(),
   });
@@ -88,11 +107,14 @@ const Users = () => {
       {isLoading && <div>Loading...</div>}
       {error && <div>Error: {(error as Error).message}</div>}
       {users && (
-        <ul>
-          {users.map((user) => (
-            <li key={user.id}>{user.name}</li>
-          ))}
-        </ul>
+        <>
+          <ul>
+            {users.pages.flatMap((page) =>
+              page.map((user) => <li key={user.id}>{user.name}</li>)
+            )}
+          </ul>
+          <button onClick={() => fetchNextPage()}>more</button>
+        </>
       )}
     </>
   );

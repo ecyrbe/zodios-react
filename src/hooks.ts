@@ -1,12 +1,15 @@
 import {
   useQuery,
   UseQueryOptions,
+  UseQueryResult,
   useMutation,
   UseMutationOptions,
-  MutationFunction,
-  useQueryClient,
   UseMutationResult,
-  UseQueryResult,
+  MutationFunction,
+  useInfiniteQuery,
+  UseInfiniteQueryOptions,
+  useQueryClient,
+  QueryFunctionContext,
 } from "react-query";
 import { ZodiosInstance } from "@zodios/core";
 import type {
@@ -19,7 +22,8 @@ import type {
   ZodiosMethodOptions,
   ZodiosRequestOptions,
 } from "@zodios/core";
-import { capitalize, pick } from "./utils";
+import type { PathParams, QueryParams } from "@zodios/core/lib/zodios.types";
+import { capitalize, pick, omit } from "./utils";
 import type {
   AliasEndpointApiDescription,
   Aliases,
@@ -31,6 +35,7 @@ import type {
 import type {
   IfEquals,
   MergeUnion,
+  PathParamNames,
   ReadonlyDeep,
 } from "@zodios/core/lib/utils.types";
 
@@ -48,6 +53,16 @@ type MutationOptions<
   >,
   "mutationFn"
 >;
+
+type QueryOptions<
+  Api extends unknown[],
+  Path extends Paths<Api, "get">
+> = Awaited<UseQueryOptions<Response<Api, "get", Path>>>;
+
+type InfiniteQueryOptions<
+  Api extends unknown[],
+  Path extends Paths<Api, "get">
+> = Awaited<UseInfiniteQueryOptions<Response<Api, "get", Path>>>;
 
 type MutationOptionsByAlias<Api extends unknown[], Alias extends string> = Omit<
   UseMutationOptions<
@@ -96,7 +111,7 @@ export class ZodiosHooksClass<Api extends ZodiosEnpointDescriptions> {
   >(
     path: Path,
     config?: TConfig,
-    queryOptions?: Omit<UseQueryOptions, "queryKey" | "queryFn">
+    queryOptions?: Omit<QueryOptions<Api, Path>, "queryKey" | "queryFn">
   ) {
     const params = pick(config as AnyZodiosMethodOptions | undefined, [
       "params",
@@ -104,17 +119,68 @@ export class ZodiosHooksClass<Api extends ZodiosEnpointDescriptions> {
     ]);
     const keys = [this.apiName, path, params];
     const query = () => this.zodios.get(path, config);
-    type QueryOptions =
-      | Omit<
-          UseQueryOptions<Awaited<ReturnType<typeof query>>>,
-          "queryKey" | "queryFn"
-        >
-      | undefined;
     const queryClient = useQueryClient();
     const invalidate = () => queryClient.invalidateQueries(keys);
     return {
       invalidate,
-      ...useQuery(keys, query, queryOptions as QueryOptions),
+      ...useQuery(keys, query, queryOptions),
+    };
+  }
+
+  useInfiniteQuery<
+    Path extends Paths<Api, "get">,
+    TConfig extends ReadonlyDeep<ZodiosMethodOptions<Api, "get", Path>>
+  >(
+    path: Path,
+    config?: TConfig,
+    queryOptions?: Omit<
+      InfiniteQueryOptions<Api, Path>,
+      "queryKey" | "queryFn"
+    > & {
+      getPageParamList: () => (
+        | keyof QueryParams<Api, "get", Path>
+        | PathParamNames<Path>
+      )[];
+    }
+  ) {
+    const params = pick(config as AnyZodiosMethodOptions | undefined, [
+      "params",
+      "queries",
+    ]);
+    if (params.params && queryOptions) {
+      params.params = omit(
+        params.params,
+        queryOptions.getPageParamList() as string[]
+      );
+    }
+    if (params.queries && queryOptions) {
+      params.queries = omit(
+        params.queries,
+        queryOptions.getPageParamList() as string[]
+      );
+    }
+    const keys = [this.apiName, path, params];
+    const query = ({ pageParam = undefined }: QueryFunctionContext) =>
+      this.zodios.get(path, {
+        ...config,
+        queries: {
+          ...(config as AnyZodiosMethodOptions)?.queries,
+          ...(pageParam as AnyZodiosMethodOptions)?.queries,
+        },
+        params: {
+          ...(config as AnyZodiosMethodOptions)?.params,
+          ...(pageParam as AnyZodiosMethodOptions)?.params,
+        },
+      } as unknown as TConfig);
+    const queryClient = useQueryClient();
+    const invalidate = () => queryClient.invalidateQueries(keys);
+    return {
+      invalidate,
+      ...useInfiniteQuery(
+        keys,
+        query,
+        queryOptions as Omit<typeof queryOptions, "getPageParamList">
+      ),
     };
   }
 
@@ -150,7 +216,7 @@ export class ZodiosHooksClass<Api extends ZodiosEnpointDescriptions> {
   >(
     path: Path,
     config?: TConfig,
-    queryOptions?: Omit<UseQueryOptions, "queryKey" | "queryFn">
+    queryOptions?: Omit<QueryOptions<Api, Path>, "queryKey" | "queryFn">
   ) {
     return this.useQuery(path, config, queryOptions);
   }

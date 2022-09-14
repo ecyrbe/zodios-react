@@ -1,5 +1,5 @@
 import React from "react";
-import { renderHook } from "@testing-library/react-hooks";
+import { act, renderHook } from "@testing-library/react-hooks";
 import { Zodios, ZodiosInstance, asApi } from "@zodios/core";
 import { ZodiosHooks, ZodiosHooksInstance } from "./hooks";
 import express from "express";
@@ -9,6 +9,35 @@ import cors from "cors";
 import { QueryClient, QueryClientProvider } from "react-query";
 
 const api = asApi([
+  {
+    method: "get",
+    path: "/users",
+    alias: "getUsers",
+    description: "Get all users",
+    parameters: [
+      {
+        name: "page",
+        type: "Query",
+        schema: z.number().positive().optional(),
+      },
+      {
+        name: "limit",
+        type: "Query",
+        schema: z.number().positive().optional(),
+      },
+    ],
+    response: z.object({
+      page: z.number(),
+      count: z.number(),
+      nextPage: z.number().optional(),
+      users: z.array(
+        z.object({
+          id: z.number(),
+          name: z.string(),
+        })
+      ),
+    }),
+  },
   {
     method: "get",
     path: "/:id",
@@ -115,6 +144,25 @@ describe("zodios hooks", () => {
     app = express();
     app.use(express.json());
     app.use(cors());
+    const userDB = Array.from({ length: 23 }, (_, i) => ({
+      id: i + 1,
+      name: `User ${i + 1}`,
+    }));
+    app.get("/users", (req, res) => {
+      const page = req.query.page ? +req.query.page : 1;
+      const limit = req.query.limit ? +req.query.limit : 10;
+      const start = (page - 1) * limit;
+      const end = start + limit;
+      const nextPage = end < userDB.length ? page + 1 : undefined;
+      const users = userDB.slice(start, end);
+
+      res.json({
+        page,
+        count: users.length,
+        nextPage,
+        users,
+      });
+    });
     app.get("/error502", (req, res) => {
       res.status(502).json({ error: { message: "bad gateway" } });
     });
@@ -300,5 +348,91 @@ describe("zodios hooks", () => {
     result.current.apiMutations.mutate(undefined);
     await waitFor(() => result.current.apiMutations.isSuccess);
     expect(result.current.userDeleted).toEqual({ id: 3 });
+  });
+
+  it("should infinite load users", async () => {
+    const { result, waitFor } = renderHook(
+      () => {
+        const apiInfinite = apiHooks.useInfiniteQuery(
+          "/users",
+          {
+            queries: { limit: 10 },
+          },
+          {
+            getPageParamList: () => ["page"],
+            getNextPageParam: (lastPage, pages) => {
+              return lastPage.nextPage
+                ? {
+                    queries: {
+                      page: lastPage.nextPage,
+                    },
+                  }
+                : undefined;
+            },
+          }
+        );
+        return { apiInfinite };
+      },
+      { wrapper }
+    );
+    await waitFor(() => result.current.apiInfinite.isSuccess);
+    expect(result.current.apiInfinite.data?.pages).toEqual([
+      {
+        users: [
+          {
+            id: 1,
+            name: "User 1",
+          },
+          {
+            id: 2,
+            name: "User 2",
+          },
+          {
+            id: 3,
+            name: "User 3",
+          },
+          {
+            id: 4,
+            name: "User 4",
+          },
+          {
+            id: 5,
+            name: "User 5",
+          },
+          {
+            id: 6,
+            name: "User 6",
+          },
+          {
+            id: 7,
+            name: "User 7",
+          },
+          {
+            id: 8,
+            name: "User 8",
+          },
+          {
+            id: 9,
+            name: "User 9",
+          },
+          {
+            id: 10,
+            name: "User 10",
+          },
+        ],
+        page: 1,
+        count: 10,
+        nextPage: 2,
+      },
+    ]);
+
+    let i = 1;
+    do {
+      result.current.apiInfinite.fetchNextPage();
+      await waitFor(() => result.current.apiInfinite.isFetching);
+      await waitFor(() => !result.current.apiInfinite.isFetching);
+      expect(result.current.apiInfinite.data?.pages.length).toEqual(++i);
+    } while (result.current.apiInfinite.hasNextPage);
+    expect(i).toEqual(3);
   });
 });
