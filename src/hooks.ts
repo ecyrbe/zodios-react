@@ -117,13 +117,14 @@ export class ZodiosHooksClass<Api extends ZodiosEnpointDescriptions> {
       "params",
       "queries",
     ]);
-    const keys = [this.apiName, path, params];
+    const key = [{ api: this.apiName, path }, params];
     const query = () => this.zodios.get(path, config);
     const queryClient = useQueryClient();
-    const invalidate = () => queryClient.invalidateQueries(keys);
+    const invalidate = () => queryClient.invalidateQueries(key);
     return {
       invalidate,
-      ...useQuery(keys, query, queryOptions),
+      key,
+      ...useQuery(key, query, queryOptions),
     };
   }
 
@@ -159,7 +160,7 @@ export class ZodiosHooksClass<Api extends ZodiosEnpointDescriptions> {
         queryOptions.getPageParamList() as string[]
       );
     }
-    const keys = [this.apiName, path, params];
+    const key = [{ api: this.apiName, path }, params];
     const query = ({ pageParam = undefined }: QueryFunctionContext) =>
       this.zodios.get(path, {
         ...config,
@@ -173,11 +174,12 @@ export class ZodiosHooksClass<Api extends ZodiosEnpointDescriptions> {
         },
       } as unknown as TConfig);
     const queryClient = useQueryClient();
-    const invalidate = () => queryClient.invalidateQueries(keys);
+    const invalidate = () => queryClient.invalidateQueries(key);
     return {
       invalidate,
+      key,
       ...useInfiniteQuery(
-        keys,
+        key,
         query,
         queryOptions as Omit<typeof queryOptions, "getPageParamList">
       ),
