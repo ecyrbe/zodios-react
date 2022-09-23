@@ -10,6 +10,7 @@ import {
   UseInfiniteQueryOptions,
   useQueryClient,
   QueryFunctionContext,
+  QueryKey,
 } from "react-query";
 import { ZodiosInstance } from "@zodios/core";
 import type {
@@ -117,7 +118,7 @@ export class ZodiosHooksClass<Api extends ZodiosEnpointDescriptions> {
       "params",
       "queries",
     ]);
-    const key = [{ api: this.apiName, path }, params];
+    const key = [{ api: this.apiName, path }, params] as QueryKey;
     const query = () => this.zodios.get(path, config);
     const queryClient = useQueryClient();
     const invalidate = () => queryClient.invalidateQueries(key);
@@ -301,7 +302,7 @@ export type ZodiosHooksAliases<Api extends unknown[]> = MergeUnion<
                 ) => UseQueryResult<
                   ResponseByAlias<Api, Uncapitalize<AliasName>>,
                   unknown
-                > & { invalidate: () => Promise<void> }
+                > & { invalidate: () => Promise<void>; key: QueryKey }
             : never;
         }
       : never
