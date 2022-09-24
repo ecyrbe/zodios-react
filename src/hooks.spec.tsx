@@ -1,14 +1,14 @@
 import React from "react";
-import { act, renderHook } from "@testing-library/react-hooks";
-import { Zodios, ZodiosInstance, asApi } from "@zodios/core";
-import { ZodiosHooks, ZodiosHooksInstance } from "./hooks";
+import { renderHook } from "@testing-library/react-hooks";
+import { QueryClient, QueryClientProvider } from "react-query";
+import { Zodios, ZodiosInstance, makeApi } from "@zodios/core";
 import express from "express";
 import { AddressInfo } from "net";
-import z from "zod";
 import cors from "cors";
-import { QueryClient, QueryClientProvider } from "react-query";
+import z from "zod";
+import { ZodiosHooks, ZodiosHooksInstance } from "./hooks";
 
-const api = asApi([
+const api = makeApi([
   {
     method: "get",
     path: "/users",
@@ -39,8 +39,37 @@ const api = asApi([
     }),
   },
   {
+    method: "post",
+    path: "/users/search",
+    alias: "searchUsers",
+    description: "Search users",
+    immutable: true,
+    parameters: [
+      {
+        name: "body",
+        type: "Body",
+        schema: z.object({
+          name: z.string(),
+          page: z.number().positive().optional(),
+          limit: z.number().positive().optional(),
+        }),
+      },
+    ],
+    response: z.object({
+      page: z.number(),
+      count: z.number(),
+      nextPage: z.number().optional(),
+      users: z.array(
+        z.object({
+          id: z.number(),
+          name: z.string(),
+        })
+      ),
+    }),
+  },
+  {
     method: "get",
-    path: "/:id",
+    path: "/users/:id",
     alias: "getUser",
     response: z.object({
       id: z.number(),
@@ -49,7 +78,7 @@ const api = asApi([
   },
   {
     method: "get",
-    path: "/:id/address/:address",
+    path: "/users/:id/address/:address",
     alias: "getUserAddress",
     response: z.object({
       id: z.number(),
@@ -58,7 +87,7 @@ const api = asApi([
   },
   {
     method: "post",
-    path: "/",
+    path: "/users",
     alias: "createUser",
     parameters: [
       {
@@ -76,7 +105,7 @@ const api = asApi([
   },
   {
     method: "put",
-    path: "/",
+    path: "/users",
     alias: "updateUser",
     parameters: [
       {
@@ -95,7 +124,7 @@ const api = asApi([
   },
   {
     method: "patch",
-    path: "/",
+    path: "/users",
     alias: "patchUser",
     parameters: [
       {
@@ -114,7 +143,7 @@ const api = asApi([
   },
   {
     method: "delete",
-    path: "/:id",
+    path: "/users/:id",
     alias: "deleteUser",
     response: z.object({
       id: z.number(),
@@ -163,27 +192,43 @@ describe("zodios hooks", () => {
         users,
       });
     });
+    app.post("/users/search", (req, res) => {
+      const { name } = req.body;
+      const users = userDB.filter((user) => user.name.includes(name));
+      const page = req.body.page ?? 1;
+      const limit = req.body.limit ?? 10;
+      const start = (page - 1) * limit;
+      const end = start + limit;
+      const nextPage = end < users.length ? page + 1 : undefined;
+      const result = users.slice(start, end);
+      res.json({
+        page,
+        count: result.length,
+        nextPage,
+        users: result,
+      });
+    });
     app.get("/error502", (req, res) => {
       res.status(502).json({ error: { message: "bad gateway" } });
     });
-    app.get("/:id", (req, res) => {
+    app.get("/users/:id", (req, res) => {
       res.status(200).json({ id: Number(req.params.id), name: "test" });
     });
-    app.get("/:id/address/:address", (req, res) => {
+    app.get("/users/:id/address/:address", (req, res) => {
       res
         .status(200)
         .json({ id: Number(req.params.id), address: req.params.address });
     });
-    app.post("/", (req, res) => {
+    app.post("/users", (req, res) => {
       res.status(200).json({ id: 3, name: req.body.name });
     });
-    app.put("/", (req, res) => {
+    app.put("/users", (req, res) => {
       res.status(200).json({ id: req.body.id, name: req.body.name });
     });
-    app.patch("/", (req, res) => {
+    app.patch("/users", (req, res) => {
       res.status(200).json({ id: req.body.id, name: req.body.name });
     });
-    app.delete("/:id", (req, res) => {
+    app.delete("/users/:id", (req, res) => {
       res.status(200).json({ id: Number(req.params.id) });
     });
 
@@ -201,7 +246,7 @@ describe("zodios hooks", () => {
 
   it("should get id", async () => {
     const { result, waitFor } = renderHook(
-      () => apiHooks.useGet("/:id", { params: { id: 1 } }),
+      () => apiHooks.useGet("/users/:id", { params: { id: 1 } }),
       { wrapper }
     );
     await waitFor(() => result.current.isSuccess);
@@ -228,7 +273,7 @@ describe("zodios hooks", () => {
   it("should get id and address", async () => {
     const { result, waitFor } = renderHook(
       () =>
-        apiHooks.useGet("/:id/address/:address", {
+        apiHooks.useGet("/users/:id/address/:address", {
           params: { id: 1, address: "test" },
         }),
       { wrapper }
@@ -247,7 +292,7 @@ describe("zodios hooks", () => {
           id: number;
           name: string;
         }>();
-        const apiMutations = apiHooks.usePost("/", undefined, {
+        const apiMutations = apiHooks.usePost("/users", undefined, {
           onSuccess: (data) => {
             setUserCreated(data);
           },
@@ -261,6 +306,49 @@ describe("zodios hooks", () => {
     expect(result.current.userCreated).toEqual({ id: 3, name: "test" });
   });
 
+  it("should search immutable users", async () => {
+    const { result, waitFor } = renderHook(
+      () =>
+        apiHooks.useImmutableQuery("/users/search", {
+          name: "User 21",
+        }),
+      { wrapper }
+    );
+    await waitFor(() => result.current.isSuccess);
+    expect(result.current.data).toEqual({
+      page: 1,
+      count: 1,
+      users: [
+        {
+          id: 21,
+          name: "User 21",
+        },
+      ],
+    });
+    expect(result.current.invalidate).toBeDefined();
+    expect(result.current.key).toBeDefined();
+  });
+
+  it("should search immutable users by alias", async () => {
+    const { result, waitFor } = renderHook(
+      () => apiHooks.useSearchUsers({ name: "User 22" }),
+      { wrapper }
+    );
+    await waitFor(() => result.current.isSuccess);
+    expect(result.current.data).toEqual({
+      page: 1,
+      count: 1,
+      users: [
+        {
+          id: 22,
+          name: "User 22",
+        },
+      ],
+    });
+    expect(result.current.invalidate).toBeDefined();
+    expect(result.current.key).toBeDefined();
+  });
+
   it("should update user", async () => {
     const { result, waitFor } = renderHook(
       () => {
@@ -268,7 +356,7 @@ describe("zodios hooks", () => {
           id: number;
           name: string;
         }>();
-        const apiMutations = apiHooks.usePut("/", undefined, {
+        const apiMutations = apiHooks.usePut("/users", undefined, {
           onSuccess: (data) => {
             setUserUpdated(data);
           },
@@ -289,7 +377,7 @@ describe("zodios hooks", () => {
           id: number;
           name: string;
         }>();
-        const apiMutations = apiHooks.usePatch("/", undefined, {
+        const apiMutations = apiHooks.usePatch("/users", undefined, {
           onSuccess: (data) => {
             setUserPatched(data);
           },
@@ -310,7 +398,7 @@ describe("zodios hooks", () => {
           id: number;
         }>();
         const apiMutations = apiHooks.useDelete(
-          "/:id",
+          "/users/:id",
           { params: { id: 3 } },
           {
             onSuccess: (data) => {
@@ -432,6 +520,107 @@ describe("zodios hooks", () => {
       await waitFor(() => result.current.apiInfinite.isFetching);
       await waitFor(() => !result.current.apiInfinite.isFetching);
       expect(result.current.apiInfinite.data?.pages.length).toEqual(++i);
+    } while (result.current.apiInfinite.hasNextPage);
+    expect(i).toEqual(3);
+  });
+
+  it("should infinite search users", async () => {
+    const { result, waitFor } = renderHook(
+      () => {
+        const apiInfinite = apiHooks.useImmutableInfiniteQuery(
+          "/users/search",
+          {
+            name: "User",
+            limit: 10,
+          },
+          undefined,
+          {
+            getPageParamList: () => ["page"],
+            getNextPageParam: (lastPage, pages) => {
+              return lastPage.nextPage
+                ? {
+                    body: {
+                      page: lastPage.nextPage,
+                    },
+                  }
+                : undefined;
+            },
+          }
+        );
+        return { apiInfinite };
+      },
+      { wrapper }
+    );
+    await waitFor(() => result.current.apiInfinite.isSuccess);
+    expect(result.current.apiInfinite.data?.pages).toEqual([
+      {
+        users: [
+          {
+            id: 1,
+            name: "User 1",
+          },
+          {
+            id: 2,
+            name: "User 2",
+          },
+          {
+            id: 3,
+            name: "User 3",
+          },
+          {
+            id: 4,
+            name: "User 4",
+          },
+          {
+            id: 5,
+            name: "User 5",
+          },
+          {
+            id: 6,
+            name: "User 6",
+          },
+          {
+            id: 7,
+            name: "User 7",
+          },
+          {
+            id: 8,
+            name: "User 8",
+          },
+          {
+            id: 9,
+            name: "User 9",
+          },
+          {
+            id: 10,
+            name: "User 10",
+          },
+        ],
+        page: 1,
+        count: 10,
+
+        nextPage: 2,
+      },
+    ]);
+
+    let i = 1;
+    do {
+      result.current.apiInfinite.fetchNextPage();
+      await waitFor(() => result.current.apiInfinite.isFetching);
+      await waitFor(() => !result.current.apiInfinite.isFetching);
+      expect(result.current.apiInfinite.data?.pages.length).toEqual(++i);
+      if (i < 3) {
+        expect(result.current.apiInfinite.data?.pages[i - 1]).toEqual({
+          users: Array.from({ length: 10 }, (_, ii) => ({
+            id: (i - 1) * 10 + ii + 1,
+            name: `User ${(i - 1) * 10 + ii + 1}`,
+          })),
+          page: i,
+          count: 10,
+
+          nextPage: i + 1,
+        });
+      }
     } while (result.current.apiInfinite.hasNextPage);
     expect(i).toEqual(3);
   });

@@ -11,6 +11,7 @@ import {
   useQueryClient,
   QueryFunctionContext,
   QueryKey,
+  UseInfiniteQueryResult,
 } from "react-query";
 import { ZodiosInstance } from "@zodios/core";
 import type {
@@ -23,13 +24,13 @@ import type {
   ZodiosMethodOptions,
   ZodiosRequestOptions,
 } from "@zodios/core";
-import type { PathParams, QueryParams } from "@zodios/core/lib/zodios.types";
 import { capitalize, pick, omit } from "./utils";
 import type {
   AliasEndpointApiDescription,
   Aliases,
   BodyByAlias,
   MutationMethod,
+  QueryParams,
   ResponseByAlias,
   ZodiosConfigByAlias,
 } from "@zodios/core/lib/zodios.types";
@@ -60,10 +61,22 @@ type QueryOptions<
   Path extends Paths<Api, "get">
 > = Awaited<UseQueryOptions<Response<Api, "get", Path>>>;
 
+type ImmutableQueryOptions<
+  Api extends unknown[],
+  M extends Method,
+  Path extends Paths<Api, M>
+> = Awaited<UseQueryOptions<Response<Api, M, Path>>>;
+
 type InfiniteQueryOptions<
   Api extends unknown[],
   Path extends Paths<Api, "get">
 > = Awaited<UseInfiniteQueryOptions<Response<Api, "get", Path>>>;
+
+export type ImmutableInfiniteQueryOptions<
+  Api extends unknown[],
+  M extends Method,
+  Path extends Paths<Api, M>
+> = Awaited<UseInfiniteQueryOptions<Response<Api, M, Path>>>;
 
 type MutationOptionsByAlias<Api extends unknown[], Alias extends string> = Omit<
   UseMutationOptions<
@@ -86,16 +99,30 @@ export class ZodiosHooksClass<Api extends ZodiosEnpointDescriptions> {
     this.zodios.api.forEach((endpoint) => {
       if (endpoint.alias) {
         if (["post", "put", "patch", "delete"].includes(endpoint.method)) {
-          (this as any)[`use${capitalize(endpoint.alias)}`] = (
-            config: any,
-            mutationOptions: any
-          ) =>
-            this.useMutation(
-              endpoint.method,
-              endpoint.path as any,
-              config,
-              mutationOptions
-            );
+          if (endpoint.method === "post" && endpoint.immutable) {
+            (this as any)[`use${capitalize(endpoint.alias)}`] = (
+              body: any,
+              config: any,
+              mutationOptions: any
+            ) =>
+              this.useImmutableQuery(
+                endpoint.path as any,
+                body,
+                config,
+                mutationOptions
+              );
+          } else {
+            (this as any)[`use${capitalize(endpoint.alias)}`] = (
+              config: any,
+              mutationOptions: any
+            ) =>
+              this.useMutation(
+                endpoint.method,
+                endpoint.path as any,
+                config,
+                mutationOptions
+              );
+          }
         } else {
           (this as any)[`use${capitalize(endpoint.alias)}`] = (
             config: any,
@@ -126,6 +153,40 @@ export class ZodiosHooksClass<Api extends ZodiosEnpointDescriptions> {
       invalidate,
       key,
       ...useQuery(key, query, queryOptions),
+    } as UseQueryResult<Response<Api, "get", Path>> & {
+      invalidate: () => Promise<void>;
+      key: QueryKey;
+    };
+  }
+
+  useImmutableQuery<
+    Path extends Paths<Api, "post">,
+    TBody extends ReadonlyDeep<Body<Api, "post", Path>>,
+    TConfig extends ReadonlyDeep<ZodiosMethodOptions<Api, "post", Path>>
+  >(
+    path: Path,
+    body?: TBody,
+    config?: TConfig,
+    queryOptions?: Omit<
+      ImmutableQueryOptions<Api, "post", Path>,
+      "queryKey" | "queryFn"
+    >
+  ) {
+    const params = pick(config as AnyZodiosMethodOptions | undefined, [
+      "params",
+      "queries",
+    ]);
+    const key = [{ api: this.apiName, path }, params, body] as QueryKey;
+    const query = () => this.zodios.post(path, body, config);
+    const queryClient = useQueryClient();
+    const invalidate = () => queryClient.invalidateQueries(key);
+    return {
+      invalidate,
+      key,
+      ...useQuery(key, query, queryOptions),
+    } as UseQueryResult<Response<Api, "post", Path>> & {
+      invalidate: () => Promise<void>;
+      key: QueryKey;
     };
   }
 
@@ -140,7 +201,9 @@ export class ZodiosHooksClass<Api extends ZodiosEnpointDescriptions> {
       "queryKey" | "queryFn"
     > & {
       getPageParamList: () => (
-        | keyof QueryParams<Api, "get", Path>
+        | (QueryParams<Api, "get", Path> extends never
+            ? never
+            : keyof QueryParams<Api, "get", Path>)
         | PathParamNames<Path>
       )[];
     }
@@ -149,6 +212,7 @@ export class ZodiosHooksClass<Api extends ZodiosEnpointDescriptions> {
       "params",
       "queries",
     ]);
+    // istanbul ignore next
     if (params.params && queryOptions) {
       params.params = omit(
         params.params,
@@ -184,6 +248,88 @@ export class ZodiosHooksClass<Api extends ZodiosEnpointDescriptions> {
         query,
         queryOptions as Omit<typeof queryOptions, "getPageParamList">
       ),
+    } as UseInfiniteQueryResult<Response<Api, "get", Path>> & {
+      invalidate: () => Promise<void>;
+      key: QueryKey;
+    };
+  }
+
+  useImmutableInfiniteQuery<
+    Path extends Paths<Api, "post">,
+    TBody extends ReadonlyDeep<Body<Api, "post", Path>>,
+    TConfig extends ReadonlyDeep<ZodiosMethodOptions<Api, "post", Path>>
+  >(
+    path: Path,
+    body?: TBody,
+    config?: TConfig,
+    queryOptions?: Omit<
+      ImmutableInfiniteQueryOptions<Api, "post", Path>,
+      "queryKey" | "queryFn"
+    > & {
+      getPageParamList: () => (
+        | keyof Body<Api, "post", Path>
+        | PathParamNames<Path>
+        | (QueryParams<Api, "post", Path> extends never
+            ? never
+            : keyof QueryParams<Api, "post", Path>)
+      )[];
+    }
+  ) {
+    const params = pick(config as AnyZodiosMethodOptions | undefined, [
+      "params",
+      "queries",
+    ]);
+    // istanbul ignore next
+    if (params.params && queryOptions) {
+      params.params = omit(
+        params.params,
+        queryOptions.getPageParamList() as string[]
+      );
+    }
+    // istanbul ignore next
+    if (params.queries && queryOptions) {
+      params.queries = omit(
+        params.queries,
+        queryOptions.getPageParamList() as string[]
+      );
+    }
+    let bodyKey;
+    if (body && queryOptions) {
+      bodyKey = omit(body, queryOptions.getPageParamList() as (keyof TBody)[]);
+    }
+    const key = [{ api: this.apiName, path }, params, bodyKey];
+    const query = ({ pageParam = undefined }: QueryFunctionContext) =>
+      this.zodios.post(
+        path,
+        {
+          ...body,
+          ...(pageParam as any)?.body,
+        },
+        {
+          ...config,
+          queries: {
+            ...(config as AnyZodiosMethodOptions)?.queries,
+            ...(pageParam as AnyZodiosMethodOptions)?.queries,
+          },
+          params: {
+            ...(config as AnyZodiosMethodOptions)?.params,
+            ...(pageParam as AnyZodiosMethodOptions)?.params,
+          },
+        } as unknown as TConfig
+      );
+    const queryClient = useQueryClient();
+    const invalidate = () => queryClient.invalidateQueries(key);
+    return {
+      invalidate,
+      key,
+      ...useInfiniteQuery(
+        key,
+        query,
+        queryOptions as Omit<typeof queryOptions, "getPageParamList">
+      ),
+    } as UseInfiniteQueryResult<Response<Api, "post", Path>> & {
+      invalidate: () => Promise<void>;
+      key: QueryKey;
     };
   }
 
@@ -277,22 +423,42 @@ export type ZodiosHooksAliases<Api extends unknown[]> = MergeUnion<
             ? AliasEndpointApiDescription<
                 Api,
                 Uncapitalize<AliasName>
-              >[number]["method"] extends MutationMethod
-              ? (
-                  configOptions?: ZodiosConfigByAlias<
+              >[number]["method"] extends infer AliasMethod extends MutationMethod
+              ? {
+                  immutable: AliasEndpointApiDescription<
                     Api,
                     Uncapitalize<AliasName>
-                  >,
-                  mutationOptions?: MutationOptionsByAlias<
-                    Api,
-                    Uncapitalize<AliasName>
+                  >[number]["immutable"];
+                  method: AliasMethod;
+                } extends { immutable: true; method: "post" }
+                ? (
+                    body: ReadonlyDeep<
+                      BodyByAlias<Api, Uncapitalize<AliasName>>
+                    >,
+                    configOptions?: ZodiosConfigByAlias<
+                      Api,
+                      Uncapitalize<AliasName>
+                    >,
+                    queryOptions?: Omit<UseQueryOptions, "queryKey" | "queryFn">
+                  ) => UseQueryResult<
+                    ResponseByAlias<Api, Uncapitalize<AliasName>>,
+                    unknown
+                  > & { invalidate: () => Promise<void>; key: QueryKey }
+                : (
+                    configOptions?: ZodiosConfigByAlias<
+                      Api,
+                      Uncapitalize<AliasName>
+                    >,
+                    mutationOptions?: MutationOptionsByAlias<
+                      Api,
+                      Uncapitalize<AliasName>
+                    >
+                  ) => UseMutationResult<
+                    ResponseByAlias<Api, Uncapitalize<AliasName>>,
+                    unknown,
+                    UndefinedIfNever<BodyByAlias<Api, Uncapitalize<AliasName>>>,
+                    unknown
                   >
-                ) => UseMutationResult<
-                  ResponseByAlias<Api, Uncapitalize<AliasName>>,
-                  unknown,
-                  UndefinedIfNever<BodyByAlias<Api, Uncapitalize<AliasName>>>,
-                  unknown
-                >
               : (
                   configOptions?: ZodiosConfigByAlias<
                     Api,
