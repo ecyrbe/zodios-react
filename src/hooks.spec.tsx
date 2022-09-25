@@ -1,7 +1,7 @@
 import React from "react";
 import { renderHook } from "@testing-library/react-hooks";
 import { QueryClient, QueryClientProvider } from "react-query";
-import { Zodios, ZodiosInstance, makeApi } from "@zodios/core";
+import { Zodios, ZodiosInstance, makeApi, ZodiosError } from "@zodios/core";
 import express from "express";
 import { AddressInfo } from "net";
 import cors from "cors";
@@ -149,6 +149,15 @@ const api = makeApi([
       id: z.number(),
     }),
   },
+  {
+    method: "get",
+    path: "/users/:id/error",
+    alias: "getUserError",
+    response: z.object({
+      id: z.number(),
+      name: z.string(),
+    }),
+  },
 ]);
 
 const queryClient = new QueryClient({
@@ -231,6 +240,9 @@ describe("zodios hooks", () => {
     app.delete("/users/:id", (req, res) => {
       res.status(200).json({ id: Number(req.params.id) });
     });
+    app.get("/users/:id/error", (req, res) => {
+      res.status(200).json({ id: Number(req.params.id), names: "test" });
+    });
 
     server = app.listen(0);
     port = (server.address() as AddressInfo).port;
@@ -255,6 +267,15 @@ describe("zodios hooks", () => {
       name: "test",
     });
     expect(result.current.invalidate).toBeDefined();
+  });
+
+  it("should have validation error", async () => {
+    const { result, waitFor } = renderHook(
+      () => apiHooks.useGet("/users/:id/error", { params: { id: 1 } }),
+      { wrapper }
+    );
+    await waitFor(() => result.current.isError);
+    expect(result.current.error).toBeInstanceOf(ZodiosError);
   });
 
   it("should get id with alias", async () => {
