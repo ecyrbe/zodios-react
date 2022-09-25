@@ -161,11 +161,10 @@ export class ZodiosHooksClass<Api extends ZodiosEnpointDescriptions> {
 
   useImmutableQuery<
     Path extends Paths<Api, "post">,
-    TBody extends ReadonlyDeep<Body<Api, "post", Path>>,
     TConfig extends ReadonlyDeep<ZodiosMethodOptions<Api, "post", Path>>
   >(
     path: Path,
-    body?: TBody,
+    body?: ReadonlyDeep<Body<Api, "post", Path>>,
     config?: TConfig,
     queryOptions?: Omit<
       ImmutableQueryOptions<Api, "post", Path>,
@@ -256,11 +255,10 @@ export class ZodiosHooksClass<Api extends ZodiosEnpointDescriptions> {
 
   useImmutableInfiniteQuery<
     Path extends Paths<Api, "post">,
-    TBody extends ReadonlyDeep<Body<Api, "post", Path>>,
     TConfig extends ReadonlyDeep<ZodiosMethodOptions<Api, "post", Path>>
   >(
     path: Path,
-    body?: TBody,
+    body?: ReadonlyDeep<Body<Api, "post", Path>>,
     config?: TConfig,
     queryOptions?: Omit<
       ImmutableInfiniteQueryOptions<Api, "post", Path>,
@@ -295,7 +293,10 @@ export class ZodiosHooksClass<Api extends ZodiosEnpointDescriptions> {
     }
     let bodyKey;
     if (body && queryOptions) {
-      bodyKey = omit(body, queryOptions.getPageParamList() as (keyof TBody)[]);
+      bodyKey = omit(
+        body,
+        queryOptions.getPageParamList() as (keyof typeof body)[]
+      );
     }
     const key = [{ api: this.apiName, path }, params, bodyKey];
     const query = ({ pageParam = undefined }: QueryFunctionContext) =>
