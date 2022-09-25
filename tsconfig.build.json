@@ -10,7 +10,9 @@
     "examples",
     "**/*.config.ts",
     "**/*.spec.ts",
+    "**/*.spec.tsx",
     "**/*.test.ts",
+    "**/*.test.tsx",
     "**/*.d.ts"
   ]
 }
