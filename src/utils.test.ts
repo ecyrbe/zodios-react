@@ -65,6 +65,11 @@ describe("pick", () => {
 
     expect(pick(obj, ["a", "b", "c"])).toEqual(obj);
   });
+
+  it("should allow undefined picks", () => {
+    // @ts-expect-error
+    expect(pick(undefined, ["a", "b"])).toEqual({});
+  });
 });
 
 describe("capitalize", () => {

@@ -32,6 +32,7 @@ import type {
   MutationMethod,
   QueryParams,
   ResponseByAlias,
+  ZodiosAliases,
   ZodiosConfigByAlias,
 } from "@zodios/core/lib/zodios.types";
 import type {
@@ -131,6 +132,63 @@ export class ZodiosHooksClass<Api extends ZodiosEnpointDescriptions> {
         }
       }
     });
+  }
+
+  private getEndpointByPath(method: string, path: string) {
+    return this.zodios.api.find(
+      (endpoint) => endpoint.method === method && endpoint.path === path
+    );
+  }
+
+  private getEndpointByAlias(alias: string) {
+    return this.zodios.api.find((endpoint) => endpoint.alias === alias);
+  }
+
+  /**
+   * compute the key for the provided endpoint
+   * @param method - HTTP method of the endpoint
+   * @param path - path for the endpoint
+   * @param config - parameters of the api to the endpoint - when providing no parameters, will return the common key for the endpoint
+   * @returns - Key
+   */
+  getKeyByPath<M extends Method, Path extends Paths<Api, Method>>(
+    method: M,
+    path: Path extends Paths<Api, M> ? Path : never,
+    config?: ZodiosMethodOptions<Api, M, Path>
+  ) {
+    const endpoint = this.getEndpointByPath(method, path);
+    if (!endpoint)
+      throw new Error(`No endpoint found for path '${method} ${path}'`);
+    if (config) {
+      const params = pick(config as AnyZodiosMethodOptions | undefined, [
+        "params",
+        "queries",
+      ]);
+      return [{ api: this.apiName, path: endpoint.path }, params] as QueryKey;
+    }
+    return [{ api: this.apiName, path: endpoint.path }] as QueryKey;
+  }
+
+  /**
+   * compute the key for the provided endpoint alias
+   * @param alias - alias of the endpoint
+   * @param config - parameters of the api to the endpoint
+   * @returns - QueryKey
+   */
+  getKeyByAlias<Alias extends keyof ZodiosAliases<Api>>(
+    alias: Alias extends string ? Alias : never,
+    config?: Alias extends string ? ZodiosConfigByAlias<Api, Alias> : never
+  ) {
+    const endpoint = this.getEndpointByAlias(alias);
+    if (!endpoint) throw new Error(`No endpoint found for alias '${alias}'`);
+    if (config) {
+      const params = pick(config as AnyZodiosMethodOptions | undefined, [
+        "params",
+        "queries",
+      ]);
+      return [{ api: this.apiName, path: endpoint.path }, params] as QueryKey;
+    }
+    return [{ api: this.apiName, path: endpoint.path }] as QueryKey;
   }
 
   useQuery<
