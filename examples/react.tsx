@@ -1,10 +1,8 @@
-import React, { useRef, useState } from "react";
+import React, { useRef } from "react";
 import { QueryClient, QueryClientProvider } from "react-query";
-import { ApiOf, asApi, Zodios } from "@zodios/core";
+import { makeApi, Zodios } from "@zodios/core";
 import { ZodiosHooks } from "../src";
 import { z } from "zod";
-import { PathParams, QueryParams } from "@zodios/core/lib/zodios.types";
-import { PathParamNames } from "@zodios/core/lib/utils.types";
 
 // you can define schema before declaring the API to get back the type
 const userSchema = z
@@ -26,7 +24,7 @@ const usersSchema = z.array(userSchema);
 type User = z.infer<typeof userSchema>;
 type Users = z.infer<typeof usersSchema>;
 
-const api = asApi([
+const api = makeApi([
   {
     method: "get",
     path: "/users",
@@ -50,6 +48,7 @@ const api = asApi([
     method: "get",
     path: "/users/:id",
     description: "Get a user",
+    alias: "getUser",
     response: userSchema,
   },
   {

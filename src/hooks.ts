@@ -482,18 +482,49 @@ export type ZodiosHooksAliases<Api extends unknown[]> = MergeUnion<
             ? AliasEndpointApiDescription<
                 Api,
                 Uncapitalize<AliasName>
-              >[number]["method"] extends infer AliasMethod extends MutationMethod
-              ? {
-                  immutable: AliasEndpointApiDescription<
-                    Api,
-                    Uncapitalize<AliasName>
-                  >[number]["immutable"];
-                  method: AliasMethod;
-                } extends { immutable: true; method: "post" }
-                ? (
-                    body: ReadonlyDeep<
-                      BodyByAlias<Api, Uncapitalize<AliasName>>
-                    >,
+              >[number]["method"] extends infer AliasMethod
+              ? AliasMethod extends MutationMethod
+                ? {
+                    immutable: AliasEndpointApiDescription<
+                      Api,
+                      Uncapitalize<AliasName>
+                    >[number]["immutable"];
+                    method: AliasMethod;
+                  } extends { immutable: true; method: "post" }
+                  ? (
+                      body: ReadonlyDeep<
+                        BodyByAlias<Api, Uncapitalize<AliasName>>
+                      >,
+                      configOptions?: ZodiosConfigByAlias<
+                        Api,
+                        Uncapitalize<AliasName>
+                      >,
+                      queryOptions?: Omit<
+                        UseQueryOptions,
+                        "queryKey" | "queryFn"
+                      >
+                    ) => UseQueryResult<
+                      ResponseByAlias<Api, Uncapitalize<AliasName>>,
+                      unknown
+                    > & { invalidate: () => Promise<void>; key: QueryKey }
+                  : (
+                      configOptions?: ZodiosConfigByAlias<
+                        Api,
+                        Uncapitalize<AliasName>
+                      >,
+                      mutationOptions?: MutationOptionsByAlias<
+                        Api,
+                        Uncapitalize<AliasName>
+                      >
+                    ) => UseMutationResult<
+                      ResponseByAlias<Api, Uncapitalize<AliasName>>,
+                      unknown,
+                      UndefinedIfNever<
+                        BodyByAlias<Api, Uncapitalize<AliasName>>
+                      >,
+                      unknown
+                    >
+                : (
                     configOptions?: ZodiosConfigByAlias<
                       Api,
                       Uncapitalize<AliasName>
@@ -503,31 +534,7 @@ export type ZodiosHooksAliases<Api extends unknown[]> = MergeUnion<
                     ResponseByAlias<Api, Uncapitalize<AliasName>>,
                     unknown
                   > & { invalidate: () => Promise<void>; key: QueryKey }
-                : (
-                    configOptions?: ZodiosConfigByAlias<
-                      Api,
-                      Uncapitalize<AliasName>
-                    >,
-                    mutationOptions?: MutationOptionsByAlias<
-                      Api,
-                      Uncapitalize<AliasName>
-                    >
-                  ) => UseMutationResult<
-                    ResponseByAlias<Api, Uncapitalize<AliasName>>,
-                    unknown,
-                    UndefinedIfNever<BodyByAlias<Api, Uncapitalize<AliasName>>>,
-                    unknown
-                  >
-              : (
-                  configOptions?: ZodiosConfigByAlias<
-                    Api,
-                    Uncapitalize<AliasName>
-                  >,
-                  queryOptions?: Omit<UseQueryOptions, "queryKey" | "queryFn">
-                ) => UseQueryResult<
-                  ResponseByAlias<Api, Uncapitalize<AliasName>>,
-                  unknown
-                > & { invalidate: () => Promise<void>; key: QueryKey }
+              : never
             : never;
         }
       : never
