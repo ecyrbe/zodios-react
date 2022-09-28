@@ -57,10 +57,23 @@ type MutationOptions<
   "mutationFn"
 >;
 
+type MutationOptionsByAlias<Api extends unknown[], Alias extends string> = Omit<
+  UseMutationOptions<
+    Awaited<ResponseByAlias<Api, Alias>>,
+    unknown,
+    UndefinedIfNever<BodyByAlias<Api, Alias>>
+  >,
+  "mutationFn"
+>;
+
 type QueryOptions<
   Api extends unknown[],
   Path extends Paths<Api, "get">
 > = Awaited<UseQueryOptions<Response<Api, "get", Path>>>;
+
+type QueryOptionsByAlias<Api extends unknown[], Alias extends string> = Awaited<
+  UseQueryOptions<ResponseByAlias<Api, Alias>>
+>;
 
 type ImmutableQueryOptions<
   Api extends unknown[],
@@ -78,15 +91,6 @@ export type ImmutableInfiniteQueryOptions<
   M extends Method,
   Path extends Paths<Api, M>
 > = Awaited<UseInfiniteQueryOptions<Response<Api, M, Path>>>;
-
-type MutationOptionsByAlias<Api extends unknown[], Alias extends string> = Omit<
-  UseMutationOptions<
-    Awaited<ResponseByAlias<Api, Alias>>,
-    unknown,
-    UndefinedIfNever<BodyByAlias<Api, Alias>>
-  >,
-  "mutationFn"
->;
 
 export class ZodiosHooksClass<Api extends ZodiosEnpointDescriptions> {
   constructor(
@@ -500,7 +504,7 @@ export type ZodiosHooksAliases<Api extends unknown[]> = MergeUnion<
                         Uncapitalize<AliasName>
                       >,
                       queryOptions?: Omit<
-                        UseQueryOptions,
+                        QueryOptionsByAlias<Api, Uncapitalize<AliasName>>,
                         "queryKey" | "queryFn"
                       >
                     ) => UseQueryResult<
@@ -529,7 +533,10 @@ export type ZodiosHooksAliases<Api extends unknown[]> = MergeUnion<
                       Api,
                       Uncapitalize<AliasName>
                     >,
-                    queryOptions?: Omit<UseQueryOptions, "queryKey" | "queryFn">
+                    queryOptions?: Omit<
+                      QueryOptionsByAlias<Api, Uncapitalize<AliasName>>,
+                      "queryKey" | "queryFn"
+                    >
                   ) => UseQueryResult<
                     ResponseByAlias<Api, Uncapitalize<AliasName>>,
                     unknown
