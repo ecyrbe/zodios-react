@@ -478,57 +478,51 @@ export class ZodiosHooksClass<Api extends ZodiosEnpointDescriptions> {
   }
 }
 
-export type ZodiosHooksAliases<Api extends unknown[]> = MergeUnion<
-  Aliases<Api> extends infer Aliases
-    ? Aliases extends string
+export type ZodiosHooksAliases<Api extends unknown[]> = {
+  [Alias in Aliases<Api> as `use${Capitalize<Alias>}`]: AliasEndpointApiDescription<
+    Api,
+    Alias
+  >[number]["method"] extends infer AliasMethod
+    ? AliasMethod extends MutationMethod
       ? {
-          [Alias in Aliases as `use${Capitalize<Alias>}`]: AliasEndpointApiDescription<
+          immutable: AliasEndpointApiDescription<
             Api,
             Alias
-          >[number]["method"] extends infer AliasMethod
-            ? AliasMethod extends MutationMethod
-              ? {
-                  immutable: AliasEndpointApiDescription<
-                    Api,
-                    Alias
-                  >[number]["immutable"];
-                  method: AliasMethod;
-                } extends { immutable: true; method: "post" }
-                ? (
-                    body: ReadonlyDeep<BodyByAlias<Api, Alias>>,
-                    configOptions?: ZodiosConfigByAlias<Api, Alias>,
-                    queryOptions?: Omit<
-                      QueryOptionsByAlias<Api, Alias>,
-                      "queryKey" | "queryFn"
-                    >
-                  ) => UseQueryResult<ResponseByAlias<Api, Alias>, unknown> & {
-                    invalidate: () => Promise<void>;
-                    key: QueryKey;
-                  }
-                : (
-                    configOptions?: ZodiosConfigByAlias<Api, Alias>,
-                    mutationOptions?: MutationOptionsByAlias<Api, Alias>
-                  ) => UseMutationResult<
-                    ResponseByAlias<Api, Alias>,
-                    unknown,
-                    UndefinedIfNever<BodyByAlias<Api, Alias>>,
-                    unknown
-                  >
-              : (
-                  configOptions?: ZodiosConfigByAlias<Api, Alias>,
-                  queryOptions?: Omit<
-                    QueryOptionsByAlias<Api, Alias>,
-                    "queryKey" | "queryFn"
-                  >
-                ) => UseQueryResult<ResponseByAlias<Api, Alias>, unknown> & {
-                  invalidate: () => Promise<void>;
-                  key: QueryKey;
-                }
-            : never;
+          >[number]["immutable"];
+          method: AliasMethod;
+        } extends { immutable: true; method: "post" }
+        ? (
+            body: ReadonlyDeep<BodyByAlias<Api, Alias>>,
+            configOptions?: ZodiosConfigByAlias<Api, Alias>,
+            queryOptions?: Omit<
+              QueryOptionsByAlias<Api, Alias>,
+              "queryKey" | "queryFn"
+            >
+          ) => UseQueryResult<ResponseByAlias<Api, Alias>, unknown> & {
+            invalidate: () => Promise<void>;
+            key: QueryKey;
+          }
+        : (
+            configOptions?: ZodiosConfigByAlias<Api, Alias>,
+            mutationOptions?: MutationOptionsByAlias<Api, Alias>
+          ) => UseMutationResult<
+            ResponseByAlias<Api, Alias>,
+            unknown,
+            UndefinedIfNever<BodyByAlias<Api, Alias>>,
+            unknown
+          >
+      : (
+          configOptions?: ZodiosConfigByAlias<Api, Alias>,
+          queryOptions?: Omit<
+            QueryOptionsByAlias<Api, Alias>,
+            "queryKey" | "queryFn"
+          >
+        ) => UseQueryResult<ResponseByAlias<Api, Alias>, unknown> & {
+          invalidate: () => Promise<void>;
+          key: QueryKey;
         }
-      : never
-    : never
->;
+    : never;
+};
 
 export type ZodiosHooksInstance<Api extends ZodiosEnpointDescriptions> =
   ZodiosHooksClass<Api> & ZodiosHooksAliases<Api>;
