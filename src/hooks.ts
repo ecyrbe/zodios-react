@@ -13,7 +13,7 @@ import {
   QueryKey,
   UseInfiniteQueryResult,
 } from "react-query";
-import { ZodiosInstance } from "@zodios/core";
+import { ZodiosError, ZodiosInstance } from "@zodios/core";
 import type {
   AnyZodiosMethodOptions,
   Body,
@@ -24,7 +24,7 @@ import type {
   ZodiosMethodOptions,
   ZodiosRequestOptions,
 } from "@zodios/core";
-import { capitalize, pick, omit } from "./utils";
+import { AxiosError } from "axios";
 import type {
   AliasEndpointApiDescription,
   Aliases,
@@ -37,10 +37,10 @@ import type {
 } from "@zodios/core/lib/zodios.types";
 import type {
   IfEquals,
-  MergeUnion,
   PathParamNames,
   ReadonlyDeep,
 } from "@zodios/core/lib/utils.types";
+import { capitalize, pick, omit } from "./utils";
 
 type UndefinedIfNever<T> = IfEquals<T, never, undefined, T>;
 
@@ -51,16 +51,18 @@ type MutationOptions<
 > = Omit<
   UseMutationOptions<
     Awaited<Response<Api, M, Path>>,
-    unknown,
+    Errors,
     UndefinedIfNever<Body<Api, M, Path>>
   >,
   "mutationFn"
 >;
 
+type Errors = Error | ZodiosError | AxiosError;
+
 type MutationOptionsByAlias<Api extends unknown[], Alias extends string> = Omit<
   UseMutationOptions<
     Awaited<ResponseByAlias<Api, Alias>>,
-    unknown,
+    Errors,
     UndefinedIfNever<BodyByAlias<Api, Alias>>
   >,
   "mutationFn"
@@ -69,28 +71,28 @@ type MutationOptionsByAlias<Api extends unknown[], Alias extends string> = Omit<
 type QueryOptions<
   Api extends unknown[],
   Path extends Paths<Api, "get">
-> = Awaited<UseQueryOptions<Response<Api, "get", Path>>>;
+> = Awaited<UseQueryOptions<Response<Api, "get", Path>, Errors>>;
 
 type QueryOptionsByAlias<Api extends unknown[], Alias extends string> = Awaited<
-  UseQueryOptions<ResponseByAlias<Api, Alias>>
+  UseQueryOptions<ResponseByAlias<Api, Alias>, Errors>
 >;
 
 type ImmutableQueryOptions<
   Api extends unknown[],
   M extends Method,
   Path extends Paths<Api, M>
-> = Awaited<UseQueryOptions<Response<Api, M, Path>>>;
+> = Awaited<UseQueryOptions<Response<Api, M, Path>, Errors>>;
 
 type InfiniteQueryOptions<
   Api extends unknown[],
   Path extends Paths<Api, "get">
-> = Awaited<UseInfiniteQueryOptions<Response<Api, "get", Path>>>;
+> = Awaited<UseInfiniteQueryOptions<Response<Api, "get", Path>, Errors>>;
 
 export type ImmutableInfiniteQueryOptions<
   Api extends unknown[],
   M extends Method,
   Path extends Paths<Api, M>
-> = Awaited<UseInfiniteQueryOptions<Response<Api, M, Path>>>;
+> = Awaited<UseInfiniteQueryOptions<Response<Api, M, Path>, Errors>>;
 
 export class ZodiosHooksClass<Api extends ZodiosEnpointDescriptions> {
   constructor(
@@ -215,7 +217,7 @@ export class ZodiosHooksClass<Api extends ZodiosEnpointDescriptions> {
       invalidate,
       key,
       ...useQuery(key, query, queryOptions),
-    } as UseQueryResult<Response<Api, "get", Path>> & {
+    } as UseQueryResult<Response<Api, "get", Path>, Errors> & {
       invalidate: () => Promise<void>;
       key: QueryKey;
     };
@@ -245,7 +247,7 @@ export class ZodiosHooksClass<Api extends ZodiosEnpointDescriptions> {
       invalidate,
       key,
       ...useQuery(key, query, queryOptions),
-    } as UseQueryResult<Response<Api, "post", Path>> & {
+    } as UseQueryResult<Response<Api, "post", Path>, Errors> & {
       invalidate: () => Promise<void>;
       key: QueryKey;
     };
@@ -309,7 +311,7 @@ export class ZodiosHooksClass<Api extends ZodiosEnpointDescriptions> {
         query,
         queryOptions as Omit<typeof queryOptions, "getPageParamList">
       ),
-    } as UseInfiniteQueryResult<Response<Api, "get", Path>> & {
+    } as UseInfiniteQueryResult<Response<Api, "get", Path>, Errors> & {
       invalidate: () => Promise<void>;
       key: QueryKey;
     };
@@ -390,7 +392,7 @@ export class ZodiosHooksClass<Api extends ZodiosEnpointDescriptions> {
         query,
         queryOptions as Omit<typeof queryOptions, "getPageParamList">
       ),
-    } as UseInfiniteQueryResult<Response<Api, "post", Path>> & {
+    } as UseInfiniteQueryResult<Response<Api, "post", Path>, Errors> & {
       invalidate: () => Promise<void>;
       key: QueryKey;
     };
@@ -498,7 +500,7 @@ export type ZodiosHooksAliases<Api extends unknown[]> = {
               QueryOptionsByAlias<Api, Alias>,
               "queryKey" | "queryFn"
             >
-          ) => UseQueryResult<ResponseByAlias<Api, Alias>, unknown> & {
+          ) => UseQueryResult<ResponseByAlias<Api, Alias>, Errors> & {
             invalidate: () => Promise<void>;
             key: QueryKey;
           }
@@ -507,7 +509,7 @@ export type ZodiosHooksAliases<Api extends unknown[]> = {
             mutationOptions?: MutationOptionsByAlias<Api, Alias>
           ) => UseMutationResult<
             ResponseByAlias<Api, Alias>,
-            unknown,
+            Errors,
             UndefinedIfNever<BodyByAlias<Api, Alias>>,
             unknown
           >
@@ -517,7 +519,7 @@ export type ZodiosHooksAliases<Api extends unknown[]> = {
             QueryOptionsByAlias<Api, Alias>,
             "queryKey" | "queryFn"
           >
-        ) => UseQueryResult<ResponseByAlias<Api, Alias>, unknown> & {
+        ) => UseQueryResult<ResponseByAlias<Api, Alias>, Errors> & {
           invalidate: () => Promise<void>;
           key: QueryKey;
         }
