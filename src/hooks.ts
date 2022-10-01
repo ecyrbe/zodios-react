@@ -43,6 +43,7 @@ import type {
 import { capitalize, pick, omit } from "./utils";
 
 type UndefinedIfNever<T> = IfEquals<T, never, undefined, T>;
+type Errors = Error | ZodiosError | AxiosError;
 
 type MutationOptions<
   Api extends unknown[],
@@ -56,8 +57,6 @@ type MutationOptions<
   >,
   "mutationFn"
 >;
-
-type Errors = Error | ZodiosError | AxiosError;
 
 type MutationOptionsByAlias<Api extends unknown[], Alias extends string> = Omit<
   UseMutationOptions<
