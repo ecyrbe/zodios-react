@@ -8,7 +8,9 @@ const config: Config.InitialOptions = {
   testRegex: ".(spec|test).tsx?$",
   transform: {
     "^.+\\.tsx?$": "ts-jest",
+    "node_modules/axios/.+\\.(j|t)sx?$": "ts-jest",
   },
+  transformIgnorePatterns: ["node_modules/(?!axios/.*)"],
   coverageDirectory: "./coverage",
   coverageThreshold: {
     global: {
