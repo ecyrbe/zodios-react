@@ -21,19 +21,20 @@ import type {
   Paths,
   Response,
   ZodiosEnpointDescriptions,
+  ZodiosEndpointDescription,
   ZodiosMethodOptions,
   ZodiosRequestOptions,
+  BodyByAlias,
+  QueryParams,
+  ResponseByAlias,
+  ZodiosConfigByAlias,
 } from "@zodios/core";
 import { AxiosError } from "axios";
 import type {
   AliasEndpointApiDescription,
   Aliases,
-  BodyByAlias,
   MutationMethod,
-  QueryParams,
-  ResponseByAlias,
   ZodiosAliases,
-  ZodiosConfigByAlias,
 } from "@zodios/core/lib/zodios.types";
 import type {
   IfEquals,
@@ -46,7 +47,7 @@ type UndefinedIfNever<T> = IfEquals<T, never, undefined, T>;
 type Errors = Error | ZodiosError | AxiosError;
 
 type MutationOptions<
-  Api extends unknown[],
+  Api extends ZodiosEndpointDescription[],
   M extends Method,
   Path extends Paths<Api, M>
 > = Omit<
@@ -58,7 +59,10 @@ type MutationOptions<
   "mutationFn"
 >;
 
-type MutationOptionsByAlias<Api extends unknown[], Alias extends string> = Omit<
+type MutationOptionsByAlias<
+  Api extends ZodiosEndpointDescription[],
+  Alias extends string
+> = Omit<
   UseMutationOptions<
     Awaited<ResponseByAlias<Api, Alias>>,
     Errors,
@@ -68,27 +72,28 @@ type MutationOptionsByAlias<Api extends unknown[], Alias extends string> = Omit<
 >;
 
 type QueryOptions<
-  Api extends unknown[],
+  Api extends ZodiosEndpointDescription[],
   Path extends Paths<Api, "get">
 > = Awaited<UseQueryOptions<Response<Api, "get", Path>, Errors>>;
 
-type QueryOptionsByAlias<Api extends unknown[], Alias extends string> = Awaited<
-  UseQueryOptions<ResponseByAlias<Api, Alias>, Errors>
->;
+type QueryOptionsByAlias<
+  Api extends ZodiosEndpointDescription[],
+  Alias extends string
+> = Awaited<UseQueryOptions<ResponseByAlias<Api, Alias>, Errors>>;
 
 type ImmutableQueryOptions<
-  Api extends unknown[],
+  Api extends ZodiosEndpointDescription[],
   M extends Method,
   Path extends Paths<Api, M>
 > = Awaited<UseQueryOptions<Response<Api, M, Path>, Errors>>;
 
 type InfiniteQueryOptions<
-  Api extends unknown[],
+  Api extends ZodiosEndpointDescription[],
   Path extends Paths<Api, "get">
 > = Awaited<UseInfiniteQueryOptions<Response<Api, "get", Path>, Errors>>;
 
 export type ImmutableInfiniteQueryOptions<
-  Api extends unknown[],
+  Api extends ZodiosEndpointDescription[],
   M extends Method,
   Path extends Paths<Api, M>
 > = Awaited<UseInfiniteQueryOptions<Response<Api, M, Path>, Errors>>;
@@ -479,7 +484,7 @@ export class ZodiosHooksClass<Api extends ZodiosEnpointDescriptions> {
   }
 }
 
-export type ZodiosHooksAliases<Api extends unknown[]> = {
+export type ZodiosHooksAliases<Api extends ZodiosEndpointDescription[]> = {
   [Alias in Aliases<Api> as `use${Capitalize<Alias>}`]: AliasEndpointApiDescription<
     Api,
     Alias
