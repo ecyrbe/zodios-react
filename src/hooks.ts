@@ -23,7 +23,7 @@ import type {
   ZodiosEndpointDefinitions,
   ZodiosEndpointDefinition,
   ZodiosEndpointDefinitionByAlias,
-  ZodiosMethodOptions,
+  ZodiosRequestOptionsByPath,
   ZodiosRequestOptions,
   ZodiosBodyByPath,
   ZodiosBodyByAlias,
@@ -168,7 +168,7 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
   getKeyByPath<M extends Method, Path extends ZodiosPathsByMethod<Api, Method>>(
     method: M,
     path: Path extends ZodiosPathsByMethod<Api, M> ? Path : never,
-    config?: ZodiosMethodOptions<Api, M, Path>
+    config?: ZodiosRequestOptionsByPath<Api, M, Path>
   ) {
     const endpoint = this.getEndpointByPath(method, path);
     if (!endpoint)
@@ -209,7 +209,7 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
 
   useQuery<
     Path extends ZodiosPathsByMethod<Api, "get">,
-    TConfig extends ReadonlyDeep<ZodiosMethodOptions<Api, "get", Path>>
+    TConfig extends ReadonlyDeep<ZodiosRequestOptionsByPath<Api, "get", Path>>
   >(
     path: Path,
     config?: TConfig,
@@ -235,7 +235,7 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
 
   useImmutableQuery<
     Path extends ZodiosPathsByMethod<Api, "post">,
-    TConfig extends ReadonlyDeep<ZodiosMethodOptions<Api, "post", Path>>
+    TConfig extends ReadonlyDeep<ZodiosRequestOptionsByPath<Api, "post", Path>>
   >(
     path: Path,
     body?: ReadonlyDeep<ZodiosBodyByPath<Api, "post", Path>>,
@@ -265,7 +265,7 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
 
   useInfiniteQuery<
     Path extends ZodiosPathsByMethod<Api, "get">,
-    TConfig extends ReadonlyDeep<ZodiosMethodOptions<Api, "get", Path>>
+    TConfig extends ReadonlyDeep<ZodiosRequestOptionsByPath<Api, "get", Path>>
   >(
     path: Path,
     config?: TConfig,
@@ -332,7 +332,7 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
 
   useImmutableInfiniteQuery<
     Path extends ZodiosPathsByMethod<Api, "post">,
-    TConfig extends ReadonlyDeep<ZodiosMethodOptions<Api, "post", Path>>
+    TConfig extends ReadonlyDeep<ZodiosRequestOptionsByPath<Api, "post", Path>>
   >(
     path: Path,
     body?: ReadonlyDeep<ZodiosBodyByPath<Api, "post", Path>>,
@@ -417,7 +417,7 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
   useMutation<
     M extends Method,
     Path extends ZodiosPathsByMethod<Api, M>,
-    TConfig extends ReadonlyDeep<ZodiosMethodOptions<Api, M, Path>>
+    TConfig extends ReadonlyDeep<ZodiosRequestOptionsByPath<Api, M, Path>>
   >(
     method: M,
     path: Path,
@@ -442,7 +442,7 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
 
   useGet<
     Path extends ZodiosPathsByMethod<Api, "get">,
-    TConfig extends ReadonlyDeep<ZodiosMethodOptions<Api, "get", Path>>
+    TConfig extends ReadonlyDeep<ZodiosRequestOptionsByPath<Api, "get", Path>>
   >(
     path: Path,
     config?: TConfig,
@@ -453,7 +453,7 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
 
   usePost<
     Path extends ZodiosPathsByMethod<Api, "post">,
-    TConfig extends ReadonlyDeep<ZodiosMethodOptions<Api, "post", Path>>
+    TConfig extends ReadonlyDeep<ZodiosRequestOptionsByPath<Api, "post", Path>>
   >(
     path: Path,
     config?: TConfig,
@@ -464,7 +464,7 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
 
   usePut<
     Path extends ZodiosPathsByMethod<Api, "put">,
-    TConfig extends ReadonlyDeep<ZodiosMethodOptions<Api, "put", Path>>
+    TConfig extends ReadonlyDeep<ZodiosRequestOptionsByPath<Api, "put", Path>>
   >(
     path: Path,
     config?: TConfig,
@@ -475,7 +475,7 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
 
   usePatch<
     Path extends ZodiosPathsByMethod<Api, "patch">,
-    TConfig extends ReadonlyDeep<ZodiosMethodOptions<Api, "patch", Path>>
+    TConfig extends ReadonlyDeep<ZodiosRequestOptionsByPath<Api, "patch", Path>>
   >(
     path: Path,
     config?: TConfig,
@@ -486,7 +486,9 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
 
   useDelete<
     Path extends ZodiosPathsByMethod<Api, "delete">,
-    TConfig extends ReadonlyDeep<ZodiosMethodOptions<Api, "delete", Path>>
+    TConfig extends ReadonlyDeep<
+      ZodiosRequestOptionsByPath<Api, "delete", Path>
+    >
   >(
     path: Path,
     config?: TConfig,
