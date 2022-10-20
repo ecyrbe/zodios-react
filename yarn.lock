@@ -1078,10 +1078,10 @@
   dependencies:
     "@types/yargs-parser" "*"
 
-"@zodios/core@10.1.0":
-  version "10.1.0"
-  resolved "https://registry.yarnpkg.com/@zodios/core/-/core-10.1.0.tgz#7103abdf9995e8eb808edcd7c06e00df180ab4e9"
-  integrity sha512-PAdL3WUWTt6F6yX6dhzAXSc0GSVt6v9v4TuOWK1PNyqaed5RbBqoMw1DXaM7yPqUcPg0cj3Z3aLRP/zOswcyMg==
+"@zodios/core@10.2.0":
+  version "10.2.0"
+  resolved "https://registry.yarnpkg.com/@zodios/core/-/core-10.2.0.tgz#0721e42c558ee8180178ce763042e4c3619789a6"
+  integrity sha512-SQPz8gWPnkXoytnMr9E53t0XEpmlCAF5evtlIxF6j4Fcl//4NhqR6/lNGB7ZMhDiHflqCfhRrYlfBefMf398sg==
 
 abab@^2.0.6:
   version "2.0.6"

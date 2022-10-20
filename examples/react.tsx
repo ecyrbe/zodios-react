@@ -1,5 +1,5 @@
 import React, { useRef } from "react";
-import { QueryClient, QueryClientProvider } from "react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { makeApi, Zodios } from "@zodios/core";
 import { ZodiosHooks } from "../src";
 import { z } from "zod";
