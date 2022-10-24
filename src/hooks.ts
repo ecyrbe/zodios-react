@@ -72,35 +72,24 @@ type MutationOptionsByAlias<
   "mutationFn"
 >;
 
-type QueryOptions<
-  Api extends ZodiosEndpointDefinition[],
-  Path extends ZodiosPathsByMethod<Api, "get">
-> = Awaited<UseQueryOptions<ZodiosResponseByPath<Api, "get", Path>, Errors>>;
-
-type QueryOptionsByAlias<
-  Api extends ZodiosEndpointDefinition[],
-  Alias extends string
-> = Awaited<UseQueryOptions<ZodiosResponseByAlias<Api, Alias>, Errors>>;
-
-type ImmutableQueryOptions<
-  Api extends ZodiosEndpointDefinition[],
-  M extends Method,
-  Path extends ZodiosPathsByMethod<Api, M>
-> = Awaited<UseQueryOptions<ZodiosResponseByPath<Api, M, Path>, Errors>>;
-
-type InfiniteQueryOptions<
-  Api extends ZodiosEndpointDefinition[],
-  Path extends ZodiosPathsByMethod<Api, "get">
-> = Awaited<
-  UseInfiniteQueryOptions<ZodiosResponseByPath<Api, "get", Path>, Errors>
+export type QueryOptions<TQueryFnData, TData> = Omit<
+  UseQueryOptions<TQueryFnData, Errors, TData>,
+  "queryKey" | "queryFn"
 >;
 
-export type ImmutableInfiniteQueryOptions<
-  Api extends ZodiosEndpointDefinition[],
-  M extends Method,
-  Path extends ZodiosPathsByMethod<Api, M>
-> = Awaited<
-  UseInfiniteQueryOptions<ZodiosResponseByPath<Api, M, Path>, Errors>
+type ImmutableQueryOptions<TQueryFnData, TData> = Omit<
+  UseQueryOptions<TQueryFnData, Errors, TData>,
+  "queryKey" | "queryFn"
+>;
+
+type InfiniteQueryOptions<TQueryFnData, TData> = Omit<
+  UseInfiniteQueryOptions<TQueryFnData, Errors, TData>,
+  "queryKey" | "queryFn"
+>;
+
+export type ImmutableInfiniteQueryOptions<TQueryFnData, TData> = Omit<
+  UseInfiniteQueryOptions<TQueryFnData, Errors, TData>,
+  "queryKey" | "queryFn"
 >;
 
 export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
@@ -210,17 +199,19 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
 
   useQuery<
     Path extends ZodiosPathsByMethod<Api, "get">,
-    TConfig extends ZodiosRequestOptionsByPath<Api, "get", Path>
+    TConfig extends ZodiosRequestOptionsByPath<Api, "get", Path>,
+    TQueryFnData = ZodiosResponseByPath<Api, "get", Path>,
+    TData = ZodiosResponseByPath<Api, "get", Path>
   >(
     path: Path,
     ...[config, queryOptions]: RequiredKeys<TConfig> extends never
       ? [
           config?: ReadonlyDeep<TConfig>,
-          queryOptions?: Omit<QueryOptions<Api, Path>, "queryKey" | "queryFn">
+          queryOptions?: QueryOptions<TQueryFnData, TData>
         ]
       : [
           config: ReadonlyDeep<TConfig>,
-          queryOptions?: Omit<QueryOptions<Api, Path>, "queryKey" | "queryFn">
+          queryOptions?: QueryOptions<TQueryFnData, TData>
         ]
   ) {
     const params = pick(config as AnyZodiosMethodOptions | undefined, [
@@ -236,7 +227,7 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
       invalidate,
       key,
       ...useQuery(key, query, queryOptions),
-    } as UseQueryResult<ZodiosResponseByPath<Api, "get", Path>, Errors> & {
+    } as UseQueryResult<TData, Errors> & {
       invalidate: () => Promise<void>;
       key: QueryKey;
     };
@@ -244,26 +235,25 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
 
   useImmutableQuery<
     Path extends ZodiosPathsByMethod<Api, "post">,
-    TConfig extends ZodiosRequestOptionsByPath<Api, "post", Path>
+    TConfig extends ZodiosRequestOptionsByPath<Api, "post", Path>,
+    TQueryFnData = ZodiosResponseByPath<Api, "post", Path>,
+    TData = ZodiosResponseByPath<Api, "post", Path>
   >(
     path: Path,
     body: ReadonlyDeep<UndefinedIfNever<ZodiosBodyByPath<Api, "post", Path>>>,
     ...[config, queryOptions]: RequiredKeys<TConfig> extends never
       ? [
           config?: ReadonlyDeep<TConfig>,
-          queryOptions?: Omit<
-            ImmutableQueryOptions<Api, "post", Path>,
-            "queryKey" | "queryFn"
-          >
+          queryOptions?: ImmutableQueryOptions<TQueryFnData, TData>
         ]
       : [
           config: ReadonlyDeep<TConfig>,
-          queryOptions?: Omit<
-            ImmutableQueryOptions<Api, "post", Path>,
-            "queryKey" | "queryFn"
-          >
+          queryOptions?: ImmutableQueryOptions<TQueryFnData, TData>
         ]
-  ) {
+  ): UseQueryResult<TData, Errors> & {
+    invalidate: () => Promise<void>;
+    key: QueryKey;
+  } {
     const params = pick(config as AnyZodiosMethodOptions | undefined, [
       "params",
       "queries",
@@ -277,24 +267,20 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
       invalidate,
       key,
       ...useQuery(key, query, queryOptions),
-    } as UseQueryResult<ZodiosResponseByPath<Api, "post", Path>, Errors> & {
-      invalidate: () => Promise<void>;
-      key: QueryKey;
     };
   }
 
   useInfiniteQuery<
     Path extends ZodiosPathsByMethod<Api, "get">,
-    TConfig extends ZodiosRequestOptionsByPath<Api, "get", Path>
+    TConfig extends ZodiosRequestOptionsByPath<Api, "get", Path>,
+    TQueryFnData = ZodiosResponseByPath<Api, "get", Path>,
+    TData = ZodiosResponseByPath<Api, "get", Path>
   >(
     path: Path,
     ...[config, queryOptions]: RequiredKeys<TConfig> extends never
       ? [
           config?: ReadonlyDeep<TConfig>,
-          queryOptions?: Omit<
-            InfiniteQueryOptions<Api, Path>,
-            "queryKey" | "queryFn"
-          > & {
+          queryOptions?: InfiniteQueryOptions<TQueryFnData, TData> & {
             getPageParamList: () => (
               | (ZodiosQueryParamsByPath<Api, "get", Path> extends never
                   ? never
@@ -305,10 +291,7 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
         ]
       : [
           config: ReadonlyDeep<TConfig>,
-          queryOptions?: Omit<
-            InfiniteQueryOptions<Api, Path>,
-            "queryKey" | "queryFn"
-          > & {
+          queryOptions?: InfiniteQueryOptions<TQueryFnData, TData> & {
             getPageParamList: () => (
               | (ZodiosQueryParamsByPath<Api, "get", Path> extends never
                   ? never
@@ -317,7 +300,10 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
             )[];
           }
         ]
-  ) {
+  ): UseInfiniteQueryResult<TData, Errors> & {
+    invalidate: () => Promise<void>;
+    key: QueryKey;
+  } {
     const params = pick(config as AnyZodiosMethodOptions | undefined, [
       "params",
       "queries",
@@ -358,28 +344,21 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
         query,
         queryOptions as Omit<typeof queryOptions, "getPageParamList">
       ),
-    } as UseInfiniteQueryResult<
-      ZodiosResponseByPath<Api, "get", Path>,
-      Errors
-    > & {
-      invalidate: () => Promise<void>;
-      key: QueryKey;
     };
   }
 
   useImmutableInfiniteQuery<
     Path extends ZodiosPathsByMethod<Api, "post">,
-    TConfig extends ZodiosRequestOptionsByPath<Api, "post", Path>
+    TConfig extends ZodiosRequestOptionsByPath<Api, "post", Path>,
+    TQueryFnData = ZodiosResponseByPath<Api, "post", Path>,
+    TData = ZodiosResponseByPath<Api, "post", Path>
   >(
     path: Path,
     body: ReadonlyDeep<UndefinedIfNever<ZodiosBodyByPath<Api, "post", Path>>>,
     ...[config, queryOptions]: RequiredKeys<TConfig> extends never
       ? [
           config?: ReadonlyDeep<TConfig>,
-          queryOptions?: Omit<
-            ImmutableInfiniteQueryOptions<Api, "post", Path>,
-            "queryKey" | "queryFn"
-          > & {
+          queryOptions?: ImmutableInfiniteQueryOptions<TQueryFnData, TData> & {
             getPageParamList: () => (
               | keyof ZodiosBodyByPath<Api, "post", Path>
               | PathParamNames<Path>
@@ -391,10 +370,7 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
         ]
       : [
           config: ReadonlyDeep<TConfig>,
-          queryOptions?: Omit<
-            ImmutableInfiniteQueryOptions<Api, "post", Path>,
-            "queryKey" | "queryFn"
-          > & {
+          queryOptions?: ImmutableInfiniteQueryOptions<TQueryFnData, TData> & {
             getPageParamList: () => (
               | keyof ZodiosBodyByPath<Api, "post", Path>
               | PathParamNames<Path>
@@ -404,7 +380,10 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
             )[];
           }
         ]
-  ) {
+  ): UseInfiniteQueryResult<TData, Errors> & {
+    invalidate: () => Promise<void>;
+    key: QueryKey;
+  } {
     const params = pick(config as AnyZodiosMethodOptions | undefined, [
       "params",
       "queries",
@@ -460,12 +439,6 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
         query,
         queryOptions as Omit<typeof queryOptions, "getPageParamList">
       ),
-    } as UseInfiniteQueryResult<
-      ZodiosResponseByPath<Api, "post", Path>,
-      Errors
-    > & {
-      invalidate: () => Promise<void>;
-      key: QueryKey;
     };
   }
 
@@ -504,21 +477,25 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
 
   useGet<
     Path extends ZodiosPathsByMethod<Api, "get">,
-    TConfig extends ZodiosRequestOptionsByPath<Api, "get", Path>
+    TConfig extends ZodiosRequestOptionsByPath<Api, "get", Path>,
+    TQueryFnData = ZodiosResponseByPath<Api, "get", Path>,
+    TData = ZodiosResponseByPath<Api, "get", Path>
   >(
     path: Path,
     ...rest: RequiredKeys<TConfig> extends never
       ? [
           config?: ReadonlyDeep<TConfig>,
-          queryOptions?: Omit<QueryOptions<Api, Path>, "queryKey" | "queryFn">
+          queryOptions?: QueryOptions<TQueryFnData, TData>
         ]
       : [
           config: ReadonlyDeep<TConfig>,
-          queryOptions?: Omit<QueryOptions<Api, Path>, "queryKey" | "queryFn">
+          queryOptions?: QueryOptions<TQueryFnData, TData>
         ]
-  ) {
-    // @ts-expect-error
-    return this.useQuery(path, ...rest);
+  ): UseQueryResult<TData, Errors> & {
+    invalidate: () => Promise<void>;
+    key: QueryKey;
+  } {
+    return this.useQuery(path, ...(rest as any[]));
   }
 
   usePost<
@@ -598,25 +575,6 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
   }
 }
 
-export type ZodiosImmutableAliasHook<Body, Config, ImmutableOptions, Response> =
-  RequiredKeys<Config> extends never
-    ? (
-        body: ReadonlyDeep<UndefinedIfNever<Body>>,
-        configOptions?: ReadonlyDeep<Config>,
-        queryOptions?: ImmutableOptions
-      ) => UseQueryResult<Response, Errors> & {
-        invalidate: () => Promise<void>;
-        key: QueryKey;
-      }
-    : (
-        body: ReadonlyDeep<UndefinedIfNever<Body>>,
-        configOptions: ReadonlyDeep<Config>,
-        queryOptions?: ImmutableOptions
-      ) => UseQueryResult<Response, Errors> & {
-        invalidate: () => Promise<void>;
-        key: QueryKey;
-      };
-
 export type ZodiosMutationAliasHook<Body, Config, MutationOptions, Response> =
   RequiredKeys<Config> extends never
     ? (
@@ -627,23 +585,6 @@ export type ZodiosMutationAliasHook<Body, Config, MutationOptions, Response> =
         configOptions: ReadonlyDeep<Config>,
         mutationOptions?: MutationOptions
       ) => UseMutationResult<Response, Errors, UndefinedIfNever<Body>, unknown>;
-
-export type ZodiosAliasHook<Config, QueryOptions, Response> =
-  RequiredKeys<Config> extends never
-    ? (
-        configOptions?: ReadonlyDeep<Config>,
-        queryOptions?: QueryOptions
-      ) => UseQueryResult<Response, Errors> & {
-        invalidate: () => Promise<void>;
-        key: QueryKey;
-      }
-    : (
-        configOptions: ReadonlyDeep<Config>,
-        queryOptions?: QueryOptions
-      ) => UseQueryResult<Response, Errors> & {
-        invalidate: () => Promise<void>;
-        key: QueryKey;
-      };
 
 export type ZodiosHooksAliases<Api extends ZodiosEndpointDefinition[]> = {
   [Alias in Aliases<Api> as `use${Capitalize<Alias>}`]: ZodiosEndpointDefinitionByAlias<
@@ -658,23 +599,52 @@ export type ZodiosHooksAliases<Api extends ZodiosEndpointDefinition[]> = {
           >[number]["immutable"];
           method: AliasMethod;
         } extends { immutable: true; method: "post" }
-        ? ZodiosImmutableAliasHook<
-            ZodiosBodyByAlias<Api, Alias>,
-            ZodiosRequestOptionsByAlias<Api, Alias>,
-            Omit<QueryOptionsByAlias<Api, Alias>, "queryKey" | "queryFn">,
-            ZodiosResponseByAlias<Api, Alias>
-          >
-        : ZodiosMutationAliasHook<
+        ? // immutable query
+          <
+            TConfig extends ZodiosRequestOptionsByAlias<Api, Alias>,
+            TQueryFnData = ZodiosResponseByAlias<Api, Alias>,
+            TData = ZodiosResponseByAlias<Api, Alias>
+          >(
+            body: ReadonlyDeep<UndefinedIfNever<ZodiosBodyByAlias<Api, Alias>>>,
+            ...[config, queryOptions]: RequiredKeys<TConfig> extends never
+              ? [
+                  config?: ReadonlyDeep<TConfig>,
+                  queryOptions?: ImmutableQueryOptions<TQueryFnData, TData>
+                ]
+              : [
+                  config: ReadonlyDeep<TConfig>,
+                  queryOptions?: ImmutableQueryOptions<TQueryFnData, TData>
+                ]
+          ) => UseQueryResult<TData, Errors> & {
+            invalidate: () => Promise<void>;
+            key: QueryKey;
+          }
+        : // useMutation
+          ZodiosMutationAliasHook<
             ZodiosBodyByAlias<Api, Alias>,
             ZodiosRequestOptionsByAlias<Api, Alias>,
             MutationOptionsByAlias<Api, Alias>,
             ZodiosResponseByAlias<Api, Alias>
           >
-      : ZodiosAliasHook<
-          ZodiosRequestOptionsByAlias<Api, Alias>,
-          Omit<QueryOptionsByAlias<Api, Alias>, "queryKey" | "queryFn">,
-          ZodiosResponseByAlias<Api, Alias>
-        >
+      : // useQuery
+        <
+          Config extends ZodiosRequestOptionsByAlias<Api, Alias>,
+          TQueryFnData = ZodiosResponseByAlias<Api, Alias>,
+          TData = ZodiosResponseByAlias<Api, Alias>
+        >(
+          ...rest: RequiredKeys<Config> extends never
+            ? [
+                configOptions?: ReadonlyDeep<Config>,
+                queryOptions?: QueryOptions<TQueryFnData, TData>
+              ]
+            : [
+                configOptions: ReadonlyDeep<Config>,
+                queryOptions?: QueryOptions<TQueryFnData, TData>
+              ]
+        ) => UseQueryResult<TData, Errors> & {
+          invalidate: () => Promise<void>;
+          key: QueryKey;
+        }
     : never;
 };
 
