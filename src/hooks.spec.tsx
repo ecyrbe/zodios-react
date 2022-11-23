@@ -190,6 +190,15 @@ describe("zodios hooks", () => {
       ]);
     });
 
+    it("should be serialisable", () => {
+      const key = apiHooks.getKeyByPath("get", "/users/:id", {
+        params: { id: 1 },
+      });
+      expect(
+        JSON.stringify(key, (k, v) => (v === undefined ? null : v))
+      ).toEqual('[{"api":"test","path":"/users/:id"},{"params":{"id":1}}]');
+    });
+
     it("should throw on invalid endpoint", () => {
       expect(() =>
         // @ts-expect-error

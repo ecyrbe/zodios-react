@@ -67,7 +67,6 @@ describe("pick", () => {
   });
 
   it("should allow undefined picks", () => {
-    // @ts-expect-error
     expect(pick(undefined, ["a", "b"])).toEqual({});
   });
 });

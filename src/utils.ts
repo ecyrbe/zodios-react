@@ -21,14 +21,16 @@ export function omit<T, K extends keyof T>(
  * @param keys - the keys to pick
  * @returns the object with the picked properties
  */
-export function pick<T, K extends keyof T>(
+export function pick<T extends Record<string, unknown>, K extends keyof T>(
   obj: T | undefined,
   keys: K[]
 ): Pick<T, K> {
   const ret = {} as Pick<T, K>;
   if (obj) {
     for (const key of keys) {
-      ret[key] = obj[key];
+      if (key in obj && obj[key] !== undefined) {
+        ret[key] = obj[key];
+      }
     }
   }
   return ret;
