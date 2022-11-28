@@ -58,11 +58,7 @@ export function combineSignals(
   ...signals: (AbortSignal | undefined)[]
 ): AbortSignal | undefined {
   const definedSignals: AbortSignal[] = signals.filter(isDefinedSignal);
-  // istanbul ignore next
-  if (definedSignals.length === 0) {
-    return undefined;
-  }
-  if (definedSignals.length === 1) {
+  if (definedSignals.length < 2) {
     return definedSignals[0];
   }
   const controller = new AbortController();
