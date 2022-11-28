@@ -42,7 +42,7 @@ import type {
   ReadonlyDeep,
   RequiredKeys,
 } from "@zodios/core/lib/utils.types";
-import { capitalize, pick, omit } from "./utils";
+import { capitalize, pick, omit, combineSignals } from "./utils";
 
 type UndefinedIfNever<T> = IfEquals<T, never, undefined, T>;
 type Errors = Error | ZodiosError | AxiosError;
@@ -95,7 +95,8 @@ export type ImmutableInfiniteQueryOptions<TQueryFnData, TData> = Omit<
 export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
   constructor(
     private readonly apiName: string,
-    private readonly zodios: ZodiosInstance<Api>
+    private readonly zodios: ZodiosInstance<Api>,
+    private readonly options: { shouldAbortOnUnmount?: boolean } = {}
   ) {
     this.injectAliasEndpoints();
   }
@@ -219,8 +220,13 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
       "queries",
     ]);
     const key = [{ api: this.apiName, path }, params] as QueryKey;
-    // @ts-expect-error
-    const query = () => this.zodios.get(path, config);
+    const query = ({ signal }: { signal?: AbortSignal }) =>
+      this.zodios.get(path, {
+        ...(config as any),
+        signal: this.options.shouldAbortOnUnmount
+          ? combineSignals(signal, (config as any)?.signal)
+          : (config as any)?.signal,
+      });
     const queryClient = useQueryClient();
     const invalidate = () => queryClient.invalidateQueries(key);
     return {
@@ -259,8 +265,13 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
       "queries",
     ]);
     const key = [{ api: this.apiName, path }, params, body] as QueryKey;
-    // @ts-expect-error
-    const query = () => this.zodios.post(path, body, config);
+    const query = ({ signal }: { signal?: AbortSignal }) =>
+      this.zodios.post(path, body, {
+        ...(config as any),
+        signal: this.options.shouldAbortOnUnmount
+          ? combineSignals(signal, (config as any)?.signal)
+          : (config as any)?.signal,
+      });
     const queryClient = useQueryClient();
     const invalidate = () => queryClient.invalidateQueries(key);
     return {
@@ -322,7 +333,7 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
       );
     }
     const key = [{ api: this.apiName, path }, params];
-    const query = ({ pageParam = undefined }: QueryFunctionContext) =>
+    const query = ({ pageParam = undefined, signal }: QueryFunctionContext) =>
       this.zodios.get(path, {
         ...config,
         queries: {
@@ -333,6 +344,9 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
           ...(config as AnyZodiosMethodOptions)?.params,
           ...(pageParam as AnyZodiosMethodOptions)?.params,
         },
+        signal: this.options.shouldAbortOnUnmount
+          ? combineSignals(signal, (config as any)?.signal)
+          : (config as any)?.signal,
       } as unknown as ReadonlyDeep<TConfig>);
     const queryClient = useQueryClient();
     const invalidate = () => queryClient.invalidateQueries(key);
@@ -410,7 +424,7 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
       );
     }
     const key = [{ api: this.apiName, path }, params, bodyKey];
-    const query = ({ pageParam = undefined }: QueryFunctionContext) =>
+    const query = ({ pageParam = undefined, signal }: QueryFunctionContext) =>
       this.zodios.post(
         path,
         {
@@ -427,6 +441,9 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
             ...(config as AnyZodiosMethodOptions)?.params,
             ...(pageParam as AnyZodiosMethodOptions)?.params,
           },
+          signal: this.options.shouldAbortOnUnmount
+            ? combineSignals(signal, (config as any)?.signal)
+            : (config as any)?.signal,
         } as unknown as ReadonlyDeep<TConfig>
       );
     const queryClient = useQueryClient();
@@ -654,7 +671,8 @@ export type ZodiosHooksInstance<Api extends ZodiosEndpointDefinitions> =
 export type ZodiosHooksConstructor = {
   new <Api extends ZodiosEndpointDefinitions>(
     name: string,
-    zodios: ZodiosInstance<Api>
+    zodios: ZodiosInstance<Api>,
+    options?: { shouldAbortOnUnmount?: boolean }
   ): ZodiosHooksInstance<Api>;
 };
 

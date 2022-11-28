@@ -44,3 +44,44 @@ export function pick<T extends Record<string, unknown>, K extends keyof T>(
 export function capitalize(str: string) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
+
+export function isDefinedSignal(signal?: AbortSignal): signal is AbortSignal {
+  return Boolean(signal);
+}
+
+/**
+ * combine multiple abort signals into one
+ * @param signals - the signals to listen to
+ * @returns - the combined signal
+ */
+export function combineSignals(
+  ...signals: (AbortSignal | undefined)[]
+): AbortSignal | undefined {
+  const definedSignals: AbortSignal[] = signals.filter(isDefinedSignal);
+  // istanbul ignore next
+  if (definedSignals.length === 0) {
+    return undefined;
+  }
+  if (definedSignals.length === 1) {
+    return definedSignals[0];
+  }
+  if (definedSignals.length > 1) {
+    const controller = new AbortController();
+
+    function onAbort() {
+      controller.abort();
+      definedSignals.forEach((signal) => {
+        signal.removeEventListener("abort", onAbort);
+      });
+    }
+
+    definedSignals.forEach((signal) => {
+      if (signal.aborted) {
+        onAbort();
+      } else {
+        signal.addEventListener("abort", onAbort);
+      }
+    });
+    return controller.signal;
+  }
+}
