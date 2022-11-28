@@ -65,23 +65,21 @@ export function combineSignals(
   if (definedSignals.length === 1) {
     return definedSignals[0];
   }
-  if (definedSignals.length > 1) {
-    const controller = new AbortController();
+  const controller = new AbortController();
 
-    function onAbort() {
-      controller.abort();
-      definedSignals.forEach((signal) => {
-        signal.removeEventListener("abort", onAbort);
-      });
-    }
-
+  function onAbort() {
+    controller.abort();
     definedSignals.forEach((signal) => {
-      if (signal.aborted) {
-        onAbort();
-      } else {
-        signal.addEventListener("abort", onAbort);
-      }
+      signal.removeEventListener("abort", onAbort);
     });
-    return controller.signal;
   }
+
+  definedSignals.forEach((signal) => {
+    if (signal.aborted) {
+      onAbort();
+    } else {
+      signal.addEventListener("abort", onAbort);
+    }
+  });
+  return controller.signal;
 }
