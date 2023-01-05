@@ -45,7 +45,7 @@ export function capitalize(str: string) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-export function isDefinedSignal(signal?: AbortSignal): signal is AbortSignal {
+function isDefinedSignal(signal?: AbortSignal): signal is AbortSignal {
   return Boolean(signal);
 }
 

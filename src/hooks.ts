@@ -220,13 +220,13 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
       "queries",
     ]);
     const key = [{ api: this.apiName, path }, params] as QueryKey;
-    const query = ({ signal }: { signal?: AbortSignal }) =>
-      this.zodios.get(path, {
-        ...(config as any),
-        signal: this.options.shouldAbortOnUnmount
-          ? combineSignals(signal, (config as any)?.signal)
-          : (config as any)?.signal,
-      });
+    const query = this.options.shouldAbortOnUnmount
+      ? ({ signal }: { signal?: AbortSignal }) =>
+          this.zodios.get(path, {
+            ...(config as any),
+            signal: combineSignals(signal, (config as any)?.signal),
+          })
+      : () => this.zodios.get(path, config as any);
     const queryClient = useQueryClient();
     const invalidate = () => queryClient.invalidateQueries(key);
     return {
@@ -265,13 +265,13 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
       "queries",
     ]);
     const key = [{ api: this.apiName, path }, params, body] as QueryKey;
-    const query = ({ signal }: { signal?: AbortSignal }) =>
-      this.zodios.post(path, body, {
-        ...(config as any),
-        signal: this.options.shouldAbortOnUnmount
-          ? combineSignals(signal, (config as any)?.signal)
-          : (config as any)?.signal,
-      });
+    const query = this.options.shouldAbortOnUnmount
+      ? ({ signal }: { signal?: AbortSignal }) =>
+          this.zodios.post(path, body, {
+            ...(config as any),
+            signal: combineSignals(signal, (config as any)?.signal),
+          })
+      : () => this.zodios.post(path, body, config as any);
     const queryClient = useQueryClient();
     const invalidate = () => queryClient.invalidateQueries(key);
     return {
@@ -333,21 +333,32 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
       );
     }
     const key = [{ api: this.apiName, path }, params];
-    const query = ({ pageParam = undefined, signal }: QueryFunctionContext) =>
-      this.zodios.get(path, {
-        ...config,
-        queries: {
-          ...(config as AnyZodiosMethodOptions)?.queries,
-          ...(pageParam as AnyZodiosMethodOptions)?.queries,
-        },
-        params: {
-          ...(config as AnyZodiosMethodOptions)?.params,
-          ...(pageParam as AnyZodiosMethodOptions)?.params,
-        },
-        signal: this.options.shouldAbortOnUnmount
-          ? combineSignals(signal, (config as any)?.signal)
-          : (config as any)?.signal,
-      } as unknown as ReadonlyDeep<TConfig>);
+    const query = this.options.shouldAbortOnUnmount
+      ? ({ pageParam = undefined, signal }: QueryFunctionContext) =>
+          this.zodios.get(path, {
+            ...config,
+            queries: {
+              ...(config as AnyZodiosMethodOptions)?.queries,
+              ...(pageParam as AnyZodiosMethodOptions)?.queries,
+            },
+            params: {
+              ...(config as AnyZodiosMethodOptions)?.params,
+              ...(pageParam as AnyZodiosMethodOptions)?.params,
+            },
+            signal: combineSignals(signal, (config as any)?.signal),
+          } as unknown as ReadonlyDeep<TConfig>)
+      : ({ pageParam = undefined }: QueryFunctionContext) =>
+          this.zodios.get(path, {
+            ...config,
+            queries: {
+              ...(config as AnyZodiosMethodOptions)?.queries,
+              ...(pageParam as AnyZodiosMethodOptions)?.queries,
+            },
+            params: {
+              ...(config as AnyZodiosMethodOptions)?.params,
+              ...(pageParam as AnyZodiosMethodOptions)?.params,
+            },
+          } as unknown as ReadonlyDeep<TConfig>);
     const queryClient = useQueryClient();
     const invalidate = () => queryClient.invalidateQueries(key);
     return {
@@ -424,28 +435,46 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
       );
     }
     const key = [{ api: this.apiName, path }, params, bodyKey];
-    const query = ({ pageParam = undefined, signal }: QueryFunctionContext) =>
-      this.zodios.post(
-        path,
-        {
-          ...body,
-          ...(pageParam as any)?.body,
-        },
-        {
-          ...config,
-          queries: {
-            ...(config as AnyZodiosMethodOptions)?.queries,
-            ...(pageParam as AnyZodiosMethodOptions)?.queries,
-          },
-          params: {
-            ...(config as AnyZodiosMethodOptions)?.params,
-            ...(pageParam as AnyZodiosMethodOptions)?.params,
-          },
-          signal: this.options.shouldAbortOnUnmount
-            ? combineSignals(signal, (config as any)?.signal)
-            : (config as any)?.signal,
-        } as unknown as ReadonlyDeep<TConfig>
-      );
+    const query = this.options.shouldAbortOnUnmount
+      ? ({ pageParam = undefined, signal }: QueryFunctionContext) =>
+          this.zodios.post(
+            path,
+            {
+              ...body,
+              ...(pageParam as any)?.body,
+            },
+            {
+              ...config,
+              queries: {
+                ...(config as AnyZodiosMethodOptions)?.queries,
+                ...(pageParam as AnyZodiosMethodOptions)?.queries,
+              },
+              params: {
+                ...(config as AnyZodiosMethodOptions)?.params,
+                ...(pageParam as AnyZodiosMethodOptions)?.params,
+              },
+              signal: combineSignals(signal, (config as any)?.signal),
+            } as unknown as ReadonlyDeep<TConfig>
+          )
+      : ({ pageParam = undefined }: QueryFunctionContext) =>
+          this.zodios.post(
+            path,
+            {
+              ...body,
+              ...(pageParam as any)?.body,
+            },
+            {
+              ...config,
+              queries: {
+                ...(config as AnyZodiosMethodOptions)?.queries,
+                ...(pageParam as AnyZodiosMethodOptions)?.queries,
+              },
+              params: {
+                ...(config as AnyZodiosMethodOptions)?.params,
+                ...(pageParam as AnyZodiosMethodOptions)?.params,
+              },
+            } as unknown as ReadonlyDeep<TConfig>
+          );
     const queryClient = useQueryClient();
     const invalidate = () => queryClient.invalidateQueries(key);
     return {
