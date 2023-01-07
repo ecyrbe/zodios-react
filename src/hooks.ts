@@ -43,6 +43,7 @@ import type {
   RequiredKeys,
 } from "@zodios/core/lib/utils.types";
 import { capitalize, pick, omit, combineSignals } from "./utils";
+import { useCallback } from "react";
 
 type UndefinedIfNever<T> = IfEquals<T, never, undefined, T>;
 type Errors = Error | ZodiosError | AxiosError;
@@ -214,7 +215,10 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
           config: ReadonlyDeep<TConfig>,
           queryOptions?: QueryOptions<TQueryFnData, TData>
         ]
-  ) {
+  ): UseQueryResult<TData, Errors> & {
+    invalidate: () => Promise<void>;
+    key: QueryKey;
+  } {
     const params = pick(config as AnyZodiosMethodOptions | undefined, [
       "params",
       "queries",
@@ -229,14 +233,16 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
       : () => this.zodios.get(path, config as any);
     const queryClient = useQueryClient();
     const invalidate = () => queryClient.invalidateQueries(key);
-    return {
-      invalidate,
-      key,
-      ...useQuery(key, query, queryOptions),
-    } as UseQueryResult<TData, Errors> & {
+    const queryResult = useQuery(key, query, queryOptions) as UseQueryResult<
+      TData,
+      Errors
+    > & {
       invalidate: () => Promise<void>;
       key: QueryKey;
     };
+    queryResult.invalidate = invalidate;
+    queryResult.key = key;
+    return queryResult;
   }
 
   useImmutableQuery<
@@ -274,11 +280,16 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
       : () => this.zodios.post(path, body, config as any);
     const queryClient = useQueryClient();
     const invalidate = () => queryClient.invalidateQueries(key);
-    return {
-      invalidate,
-      key,
-      ...useQuery(key, query, queryOptions),
+    const queryResult = useQuery(key, query, queryOptions) as UseQueryResult<
+      TData,
+      Errors
+    > & {
+      invalidate: () => Promise<void>;
+      key: QueryKey;
     };
+    queryResult.invalidate = invalidate;
+    queryResult.key = key;
+    return queryResult;
   }
 
   useInfiniteQuery<
