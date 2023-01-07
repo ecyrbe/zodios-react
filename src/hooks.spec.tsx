@@ -395,6 +395,16 @@ describe("zodios hooks", () => {
         id: 1,
         address: "test",
       });
+      expect(result.current.invalidate).toBeDefined();
+      expect(result.current.key).toEqual([
+        {
+          api: "test",
+          path: "/users/:id/address/:address",
+        },
+        {
+          params: { id: 1, address: "test" },
+        },
+      ]);
     });
 
     it("should create user", async () => {
@@ -438,7 +448,11 @@ describe("zodios hooks", () => {
         ],
       });
       expect(result.current.invalidate).toBeDefined();
-      expect(result.current.key).toBeDefined();
+      expect(result.current.key).toEqual([
+        { api: "test", path: "/users/search" },
+        {},
+        { name: "User 21" },
+      ]);
     });
 
     it("should search immutable users by alias", async () => {
