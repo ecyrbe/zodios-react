@@ -527,7 +527,7 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
         method,
         url: path,
         data: variables,
-      } as unknown as ZodiosRequestOptions<Api, M, Path>);
+      } as any);
     };
     return useMutation(mutation, mutationOptions);
   }
