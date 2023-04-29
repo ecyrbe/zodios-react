@@ -96,9 +96,9 @@ export type ImmutableInfiniteQueryOptions<TQueryFnData, TData> = Omit<
 
 export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
   constructor(
-    private readonly apiName: string,
-    private readonly zodios: ZodiosInstance<Api>,
-    private readonly options: { shouldAbortOnUnmount?: boolean } = {}
+    protected readonly apiName: string,
+    protected readonly zodios: ZodiosInstance<Api>,
+    protected readonly options: { shouldAbortOnUnmount?: boolean } = {}
   ) {
     this.injectAliasEndpoints();
   }
