@@ -812,17 +812,17 @@
   dependencies:
     "@sinonjs/commons" "^2.0.0"
 
-"@tanstack/query-core@4.29.7":
-  version "4.29.7"
-  resolved "https://registry.yarnpkg.com/@tanstack/query-core/-/query-core-4.29.7.tgz#9fe4587e23cb9566b937c518ffa44226041d388d"
-  integrity sha512-GXG4b5hV2Loir+h2G+RXhJdoZhJLnrBWsuLB2r0qBRyhWuXq9w/dWxzvpP89H0UARlH6Mr9DiVj4SMtpkF/aUA==
+"@tanstack/query-core@4.29.10":
+  version "4.29.10"
+  resolved "https://registry.yarnpkg.com/@tanstack/query-core/-/query-core-4.29.10.tgz#0e8246227ef49690441e3b941a7c944c4142d357"
+  integrity sha512-hsId1oOeUQrYAQs3A8ZI2wOV6MrgekMXBAPlJ+ysAsksCIWP5nlT4Dxkgd/D5bzRBVs5muNPrHhAq1QOuVggPA==
 
-"@tanstack/react-query@4.29.7":
-  version "4.29.7"
-  resolved "https://registry.yarnpkg.com/@tanstack/react-query/-/react-query-4.29.7.tgz#772996905a81ca64172582891c5a82e88dbafccd"
-  integrity sha512-ijBWEzAIo09fB1yd22slRZzprrZ5zMdWYzBnCg5qiXuFbH78uGN1qtGz8+Ed4MuhaPaYSD+hykn+QEKtQviEtg==
+"@tanstack/react-query@4.29.10":
+  version "4.29.10"
+  resolved "https://registry.yarnpkg.com/@tanstack/react-query/-/react-query-4.29.10.tgz#7180d2eb23679902e7e75aa2ad47fe5531cd9e1b"
+  integrity sha512-d4c2Ei+hJEcRxYN2xhOooeX3+HsUVGFXTtAE0/oNA8R1iXGzFyOpAMgfy6GTC+eZGtKdbtjVlnfYIIUEF8tTMA==
   dependencies:
-    "@tanstack/query-core" "4.29.7"
+    "@tanstack/query-core" "4.29.10"
     use-sync-external-store "^1.2.0"
 
 "@testing-library/dom@9.3.0":
