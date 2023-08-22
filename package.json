@@ -60,7 +60,7 @@
     "@types/jest": "29.5.3",
     "@types/node": "18.17.7",
     "@types/react": "18.2.20",
-    "@zodios/core": "10.9.5",
+    "@zodios/core": "10.9.6",
     "axios": "1.4.0",
     "cors": "2.8.5",
     "express": "4.18.2",
