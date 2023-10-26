@@ -58,7 +58,7 @@
     "@types/cors": "2.8.14",
     "@types/express": "4.17.19",
     "@types/jest": "29.5.5",
-    "@types/node": "18.18.5",
+    "@types/node": "20.8.9",
     "@types/react": "18.2.30",
     "@zodios/core": "10.9.6",
     "axios": "1.5.1",
