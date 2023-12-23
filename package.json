@@ -43,12 +43,12 @@
     "test": "jest --coverage"
   },
   "peerDependencies": {
-    "@tanstack/react-query": "4.x",
+    "@tanstack/react-query": "4.x || 5.x",
     "@zodios/core": ">=10.2.0 <11.0.0",
     "react": ">=16.8.0"
   },
   "devDependencies": {
-    "@tanstack/react-query": "4.36.1",
+    "@tanstack/react-query": "5.14.6",
     "@testing-library/dom": "9.3.3",
     "@testing-library/jest-dom": "6.1.4",
     "@testing-library/react": "14.0.0",
