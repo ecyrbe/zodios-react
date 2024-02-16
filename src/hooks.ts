@@ -12,6 +12,7 @@ import {
   QueryFunctionContext,
   QueryKey,
   UseInfiniteQueryResult,
+  InfiniteData,
 } from "@tanstack/react-query";
 import { ZodiosError, ZodiosInstance } from "@zodios/core";
 import type {
@@ -236,11 +237,17 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
           })
       : () => this.zodios.get(path, config as any);
     const queryClient = useQueryClient();
-    const invalidate = () => queryClient.invalidateQueries(key);
-    const queryResult = useQuery(key, query, queryOptions) as any;
-    queryResult.invalidate = invalidate;
-    queryResult.key = key;
-    return queryResult;
+    const invalidate = () => queryClient.invalidateQueries({ queryKey: key });
+    const queryResult = useQuery({
+      queryKey: key,
+      queryFn: query,
+      ...queryOptions
+    });
+    return {
+      ...queryResult,
+      invalidate,
+      key,
+    };
   }
 
   useImmutableQuery<
@@ -280,11 +287,16 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
           })
       : () => this.zodios.post(path, body, config as any);
     const queryClient = useQueryClient();
-    const invalidate = () => queryClient.invalidateQueries(key);
-    const queryResult = useQuery(key, query, queryOptions) as any;
-    queryResult.invalidate = invalidate;
-    queryResult.key = key;
-    return queryResult;
+    const invalidate = () => queryClient.invalidateQueries({ queryKey: key });
+    return {
+      ...useQuery({
+        queryKey: key,
+        queryFn: query,
+        ...queryOptions
+      }),
+      invalidate,
+      key
+    };
   }
 
   useInfiniteQuery<
@@ -318,7 +330,7 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
           }
         ]
   ): UseInfiniteQueryResult<
-    TData,
+    InfiniteData<TData>,
     Errors<UnknownIfNever<ZodiosErrorByPath<Api, "get", Path, number>>>
   > & {
     invalidate: () => Promise<void>;
@@ -343,7 +355,7 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
     }
     const key = [{ api: this.apiName, path }, params];
     const query = this.options.shouldAbortOnUnmount
-      ? ({ pageParam = undefined, signal }: QueryFunctionContext) =>
+      ? ({ pageParam, signal }: QueryFunctionContext<typeof key, AnyZodiosMethodOptions>) =>
           this.zodios.get(path, {
             ...config,
             queries: {
@@ -356,7 +368,7 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
             },
             signal: combineSignals(signal, (config as any)?.signal),
           } as unknown as ReadonlyDeep<TConfig>)
-      : ({ pageParam = undefined }: QueryFunctionContext) =>
+      : ({ pageParam }: QueryFunctionContext<typeof key, AnyZodiosMethodOptions>) =>
           this.zodios.get(path, {
             ...config,
             queries: {
@@ -369,16 +381,19 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
             },
           } as unknown as ReadonlyDeep<TConfig>);
     const queryClient = useQueryClient();
-    const invalidate = () => queryClient.invalidateQueries(key);
+    const invalidate = () => queryClient.invalidateQueries({ queryKey: key });
+
     return {
+      ...useInfiniteQuery({
+        queryKey: key,
+        queryFn: query,
+        initialPageParam: {},
+        getNextPageParam: () => ({}),
+        ...(queryOptions as Omit<typeof queryOptions, "getPageParamList">)
+      }),
       invalidate,
       key,
-      ...useInfiniteQuery(
-        key,
-        query,
-        queryOptions as Omit<typeof queryOptions, "getPageParamList">
-      ),
-    } as any;
+    };
   }
 
   useImmutableInfiniteQuery<
@@ -415,7 +430,7 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
           }
         ]
   ): UseInfiniteQueryResult<
-    TData,
+    InfiniteData<TData>,
     Errors<UnknownIfNever<ZodiosErrorByPath<Api, "post", Path, number>>>
   > & {
     invalidate: () => Promise<void>;
@@ -448,7 +463,7 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
     }
     const key = [{ api: this.apiName, path }, params, bodyKey];
     const query = this.options.shouldAbortOnUnmount
-      ? ({ pageParam = undefined, signal }: QueryFunctionContext) =>
+      ? ({ pageParam, signal }: QueryFunctionContext<typeof key, AnyZodiosMethodOptions | undefined>) =>
           this.zodios.post(
             path,
             {
@@ -468,7 +483,7 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
               signal: combineSignals(signal, (config as any)?.signal),
             } as unknown as ReadonlyDeep<TConfig>
           )
-      : ({ pageParam = undefined }: QueryFunctionContext) =>
+      : ({ pageParam }: QueryFunctionContext<typeof key, AnyZodiosMethodOptions | undefined>) =>
           this.zodios.post(
             path,
             {
@@ -488,15 +503,17 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
             } as unknown as ReadonlyDeep<TConfig>
           );
     const queryClient = useQueryClient();
-    const invalidate = () => queryClient.invalidateQueries(key);
+    const invalidate = () => queryClient.invalidateQueries({ queryKey: key });
     return {
       invalidate,
       key,
-      ...useInfiniteQuery(
-        key,
-        query,
-        queryOptions as Omit<typeof queryOptions, "getPageParamList">
-      ),
+      ...useInfiniteQuery({
+        queryKey: key,
+        queryFn: query,
+        initialPageParam: {},
+        getNextPageParam: () => ({}),
+        ...(queryOptions as Omit<typeof queryOptions, "getPageParamList">),
+      })
     } as any;
   }
 
@@ -530,7 +547,10 @@ export class ZodiosHooksClass<Api extends ZodiosEndpointDefinitions> {
         data: variables,
       } as any);
     };
-    return useMutation(mutation, mutationOptions);
+    return useMutation({
+      mutationFn: mutation,
+      ...mutationOptions
+    });
   }
 
   useGet<
